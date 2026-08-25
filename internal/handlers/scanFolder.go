@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"module-manager/services"
 	"module-manager/types"
+	"module-manager/utils"
 	"net/http"
 	"strconv"
 )
@@ -11,7 +12,7 @@ import (
 type ScanFolderResponse struct {
 	Path          string               `json:"path"`
 	TotalProjects int                  `json:"total_projects"`
-	TotalSize     int64                `json:"total_size"`
+	TotalSize     string               `json:"total_size"`
 	Projects      []types.ProjectEntry `json:"projects"`
 }
 
@@ -51,7 +52,7 @@ func ScanFolder(scan *types.ScanFolderTypes) http.HandlerFunc {
 
 		resp.Path = scan.Path
 		resp.TotalProjects = scan.ProjectCount
-		resp.TotalSize = scan.TotalSize
+		resp.TotalSize = utils.FormatSize(scan.TotalSize)
 		resp.Projects = data
 
 		w.Header().Set("Content-Type", "application/json")

@@ -30,9 +30,9 @@ func SetPath(scan *types.ScanFolderTypes) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(struct {
-			success string
+			Success string `json:"success"`
 		}{
-			success: "ok",
+			Success: "ok",
 		})
 	}
 }

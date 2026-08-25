@@ -11,6 +11,10 @@ import (
 )
 
 func ScanFolder(sft *types.ScanFolderTypes, limit int, offset int) ([]types.ProjectEntry, error) {
+	if sft.Path == "" {
+		return nil, errors.New("path must exist.")
+	}
+
 	path := filepath.Clean(sft.Path)
 
 	info, err := os.Stat(path)
@@ -54,7 +58,7 @@ func ScanFolder(sft *types.ScanFolderTypes, limit int, offset int) ([]types.Proj
 		}
 
 		pe = types.ProjectEntry{
-			ID:        fmt.Sprintf("%d%s", i, name),
+			ID:        fmt.Sprintf("%d%s", i+1, name),
 			Name:      name,
 			Path:      path,
 			IsDir:     entry.IsDir(),
