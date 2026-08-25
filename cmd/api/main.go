@@ -27,7 +27,7 @@ func main() {
 		log.Fatal("Path can't be empty")
 	}
 
-	_, err := services.MustSetPath(*path)
+	scan, err := services.MustSetPath(*path)
 	if err != nil {
 		log.Fatalf("services.MustSetPath: %v", err.Error())
 	}
@@ -47,6 +47,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", handlers.Health)
+	mux.HandleFunc("POST /api/folders/scan", handlers.ScanFolder(scan))
 
 	server := http.Server{
 		Addr:    ":" + cfg.Port,
