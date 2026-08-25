@@ -14,3 +14,16 @@
 | GitHub       | `GetGitHubInfo`       | Get repository information where available                           |
 | Process      | `GetProcessStatus`    | Send current operation/status to frontend                            |
 | Process      | `GetProcessLogs`      | Stream terminal-like output to frontend                              |
+
+
+
+| Frontend API                            | Go backend function     | Purpose                           |
+| --------------------------------------- | ----------------------- | --------------------------------- |
+| `POST /api/folders/scan`                | `ScanFolder()`          | Scan selected parent folder       |
+| `GET /api/projects/:id`                 | `GetProjectInfo()`      | Get detailed project information  |
+| `GET /api/folder/size`                  | `GetFolderSize()`       | Get total folder size             |
+| `DELETE /api/projects/:id/node-modules` | `DeleteNodeModules()`   | Delete `node_modules`             |
+| `POST /api/projects/:id/install`        | `InstallDependencies()` | Install dependencies              |
+| `GET /api/cache`                        | `FindCacheFiles()`      | Find cache files                  |
+| `DELETE /api/cache`                     | `DeleteCacheFiles()`    | Delete selected caches            |
+| `GET /api/projects/:id/git`             | `GetGitInfo()`          | Get latest Git commit information |

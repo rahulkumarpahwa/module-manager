@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"module-manager/types"
 	"module-manager/utils"
@@ -42,7 +43,7 @@ func ScanFolder(s *types.ScanFolderTypes) ([]types.ProjectEntry, error) {
 
 	var pes []types.ProjectEntry
 
-	for _, entry := range projectEntries {
+	for i, entry := range projectEntries {
 		var pe types.ProjectEntry
 
 		if !entry.IsDir() {
@@ -50,7 +51,8 @@ func ScanFolder(s *types.ScanFolderTypes) ([]types.ProjectEntry, error) {
 			continue
 		}
 
-		var path = filepath.Join(path, entry.Name())
+		var name = entry.Name()
+		var path = filepath.Join(path, name)
 
 		var size int64
 		size, err = utils.GetDirSize(path)
@@ -60,7 +62,8 @@ func ScanFolder(s *types.ScanFolderTypes) ([]types.ProjectEntry, error) {
 		}
 
 		pe = types.ProjectEntry{
-			Name:      entry.Name(),
+			ID:        fmt.Sprintf("%d%s", i, name),
+			Name:      name,
 			Path:      path,
 			IsDir:     entry.IsDir(),
 			TotalSize: size,

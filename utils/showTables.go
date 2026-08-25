@@ -7,8 +7,8 @@ import (
 
 func ShowTables(details []types.ProjectEntry, TotalSize int64, ProjectCount int) {
 	// Header
-	fmt.Printf("%-30s %-50s %-12s %-10s\n",
-		"NAME", "PATH", "SIZE", "TYPE")
+	fmt.Printf("%-30s %-30s %-50s %-12s %-10s\n",
+		"ID", "NAME", "PATH", "SIZE", "TYPE")
 	fmt.Println("-----------------------------------------------------------------------------------------------")
 
 	// Rows
@@ -18,7 +18,8 @@ func ShowTables(details []types.ProjectEntry, TotalSize int64, ProjectCount int)
 			entryType = "DIR"
 		}
 
-		fmt.Printf("%-30s %-50s %-12s %-10s\n",
+		fmt.Printf("%-30s %-30s %-50s %-12s %-10s\n",
+			entry.ID,
 			entry.Name,
 			entry.Path,
 			FormatSize(entry.TotalSize),
