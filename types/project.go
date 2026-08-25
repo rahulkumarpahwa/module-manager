@@ -13,4 +13,5 @@ type Project struct {
 	Frameworks       []string  `json:"frameworks"`
 	LatestCommit     string    `json:"latest_commit"`
 	LatestCommitDate time.Time `json:"latest_commit_date"`
+	ListFiles        []string  `json:"list_files"`
 }

@@ -21,8 +21,8 @@ func MustSetPath(path string) (*types.ScanFolderTypes, error) {
 	}, nil
 }
 
-func ScanFolder(s *types.ScanFolderTypes) ([]types.ProjectEntry, error) {
-	path := filepath.Clean(s.Path)
+func ScanFolder(sft *types.ScanFolderTypes) ([]types.ProjectEntry, error) {
+	path := filepath.Clean(sft.Path)
 
 	info, err := os.Stat(path)
 	if err != nil {
@@ -68,8 +68,8 @@ func ScanFolder(s *types.ScanFolderTypes) ([]types.ProjectEntry, error) {
 			IsDir:     entry.IsDir(),
 			TotalSize: size,
 		}
-		s.TotalSize += size
-		s.ProjectCount++
+		sft.TotalSize += size
+		sft.ProjectCount++
 		pes = append(pes, pe)
 	}
 
