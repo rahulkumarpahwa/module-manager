@@ -1,0 +1,252 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+		"name": "module-manager",
+		"description": "Postman collection for the Module Manager (MM) Go backend.\n\nBase URL is driven by the `baseUrl` collection variable (default: http://localhost:8778, see `.env` -> `Port`).\n\nTypical flow:\n1. `Health Check` – verify the server is up.\n2. `Set Path` – point MM at the parent folder containing your Node.js projects.\n3. `Scan Folder` – list detected projects (supports `limit` / `offset` pagination).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/healthz",
+							"host": ["{{baseUrl}}"],
+							"path": ["healthz"]
+						},
+						"description": "`GET /healthz` → `handlers.Health`\n\nSimple liveness probe. Returns server time and a fixed message."
+					},
+					"response": [
+						{
+							"name": "200 - Server healthy",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/healthz",
+									"host": ["{{baseUrl}}"],
+									"path": ["healthz"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"current_time\": \"2026-08-25T12:00:00+05:30\",\n    \"message\": \"server is working fine.\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "API",
+			"item": [
+				{
+					"name": "Set Path",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"path\": \"C:\\\\Programming\\\\projects\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/set-path",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "set-path"]
+						},
+						"description": "`POST /api/set-path` → `handlers.SetPath`\n\nSets the parent folder that subsequent scans will read from. The path is stored in memory (server state).\n\nErrors (400):\n- `Invalid JSON` – malformed request body.\n- `path cannot be empty` – missing/blank `path` field.\n\n> Note: the handler currently returns `{}` because its response struct field is unexported, so the `success` field is omitted by `encoding/json`."
+					},
+					"response": [
+						{
+							"name": "201 - Path accepted",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"path\": \"C:\\\\Programming\\\\projects\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/set-path",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "set-path"]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{}"
+						},
+						{
+							"name": "400 - Empty path",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"path\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/set-path",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "set-path"]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "text",
+							"header": [],
+							"cookie": [],
+							"body": "path cannot be empty"
+						}
+					]
+				},
+				{
+					"name": "Scan Folder",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/folders/scan?limit=20&offset=0",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "folders", "scan"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Max number of directory entries to return. Default: 20. Must be > 0."
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"description": "Number of directory entries to skip before returning. Default: 0. Must be >= 0."
+								}
+							]
+						},
+						"description": "`POST /api/folders/scan` → `handlers.ScanFolder`\n\nScans the parent folder previously set via `/api/set-path`, reads its immediate subdirectories and returns basic info for each project (id, name, path, recursive size).\n\nQuery params:\n- `limit` (optional, default 20)\n- `offset` (optional, default 0)\n\nErrors (400):\n- `invalid limit` / `invalid offset` – non-numeric or out-of-range values.\n- `folder does not exist.` / `path is not a directory/folder.` – bad stored path.\n\nCall `Set Path` first, otherwise no folder is configured."
+					},
+					"response": [
+						{
+							"name": "201 - Scan result",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/folders/scan?limit=20&offset=0",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "folders", "scan"],
+									"query": [
+										{
+											"key": "limit",
+											"value": "20"
+										},
+										{
+											"key": "offset",
+											"value": "0"
+										}
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"path\": \"C:\\\\Programming\\\\projects\",\n    \"total_projects\": 2,\n    \"total_size\": 123456789,\n    \"projects\": [\n        {\n            \"id\": \"0my-app\",\n            \"name\": \"my-app\",\n            \"path\": \"C:\\\\Programming\\\\projects\\\\my-app\",\n            \"is_dir\": true,\n            \"total_size\": 61728394\n        },\n        {\n            \"id\": \"1my-api\",\n            \"name\": \"my-api\",\n            \"path\": \"C:\\\\Programming\\\\projects\\\\my-api\",\n            \"is_dir\": true,\n            \"total_size\": 61728395\n        }\n    ]\n}"
+						},
+						{
+							"name": "400 - Invalid limit",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/folders/scan?limit=-1&offset=0",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "folders", "scan"],
+									"query": [
+										{
+											"key": "limit",
+											"value": "-1"
+										},
+										{
+											"key": "offset",
+											"value": "0"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "text",
+							"header": [],
+							"cookie": [],
+							"body": "invalid limit"
+						}
+					]
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8778",
+			"type": "string",
+			"description": "Module Manager API base URL. Port comes from `.env` (`Port=8778`)."
+		}
+	]
+}

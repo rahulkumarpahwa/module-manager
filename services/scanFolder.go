@@ -32,7 +32,9 @@ func ScanFolder(sft *types.ScanFolderTypes, limit int, offset int) ([]types.Proj
 
 	var pes []types.ProjectEntry
 
-	for i, entry := range take(projectEntries, offset, limit) {
+	entries := take(projectEntries, offset, limit)
+
+	for i, entry := range entries {
 
 		var pe types.ProjectEntry
 
@@ -59,9 +61,10 @@ func ScanFolder(sft *types.ScanFolderTypes, limit int, offset int) ([]types.Proj
 			TotalSize: size,
 		}
 		sft.TotalSize += size
-		sft.ProjectCount++
 		pes = append(pes, pe)
 	}
+
+	sft.ProjectCount = len(entries)
 
 	return pes, nil
 }
