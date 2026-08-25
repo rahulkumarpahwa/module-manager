@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"flag"
 	"log"
 	"module-manager/config"
 	"module-manager/internal/handlers"
-	"module-manager/services"
+	"module-manager/types"
+
 	// "module-manager/utils"
 	"net/http"
 	"os"
@@ -17,37 +17,18 @@ import (
 
 func main() {
 	log.SetFlags(log.Ltime | log.Ldate)
-
-	// We will turn this into a worker and then use again and again.
-	path := flag.String("path", "", "folder path")
-
-	flag.Parse()
-
-	if *path == "" {
-		log.Fatal("Path can't be empty")
-	}
-
-	scan, err := services.MustSetPath(*path)
-	if err != nil {
-		log.Fatalf("services.MustSetPath: %v", err.Error())
-	}
+	scan := types.ScanFolderTypes{}
 
 	cfg, err := config.Open()
 	if err != nil {
 		log.Fatalf("main.config.Open: %v", err.Error())
 	}
 
-	// details, err := services.ScanFolder(scanFolder)
-	// if err != nil {
-	// 	log.Fatalf("Main.services.ScanFolder: %v", err.Error())
-	// }
-
-	// utils.ShowTables(details, scanFolder.TotalSize, scanFolder.ProjectCount)
-
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", handlers.Health)
-	mux.HandleFunc("POST /api/folders/scan", handlers.ScanFolder(scan))
+	mux.HandleFunc("POST /api/set-path", handlers.SetPath(&scan))
+	mux.HandleFunc("POST /api/folders/scan", handlers.ScanFolder(&scan))
 
 	server := http.Server{
 		Addr:    ":" + cfg.Port,

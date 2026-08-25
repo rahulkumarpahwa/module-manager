@@ -10,16 +10,6 @@ import (
 	"path/filepath"
 )
 
-func MustSetPath(path string) (*types.ScanFolderTypes, error) {
-	if path == "" {
-		return nil, errors.New("path cannot be empty.")
-	}
-	return &types.ScanFolderTypes{
-		Path:         path,
-		TotalSize:    0,
-		ProjectCount: 0,
-	}, nil
-}
 
 func ScanFolder(sft *types.ScanFolderTypes) ([]types.ProjectEntry, error) {
 	path := filepath.Clean(sft.Path)
