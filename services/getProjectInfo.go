@@ -21,7 +21,6 @@ func GetProjectInfo(sft *types.ScanFolderTypes, projectEntry *types.ProjectEntry
 		return nil, errors.New("GetProjectInfo: os.ReadDir: " + err.Error())
 	}
 
-	var list []string
 	project := &types.Project{}
 
 	for _, entry := range entries {
@@ -39,7 +38,7 @@ func GetProjectInfo(sft *types.ScanFolderTypes, projectEntry *types.ProjectEntry
 			project.HasGit = true
 		}
 
-		list = append(list, name)
+		project.ListFiles = append(project.ListFiles, name)
 	}
 
 	if project.HasNodeModules {

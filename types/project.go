@@ -15,3 +15,5 @@ type Project struct {
 	LatestCommitDate time.Time `json:"latest_commit_date"`
 	ListFiles        []string  `json:"list_files"`
 }
+
+// todo : add the last modified date and creation date of the Project as well.
