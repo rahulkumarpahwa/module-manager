@@ -10,8 +10,7 @@ import (
 	"path/filepath"
 )
 
-
-func ScanFolder(sft *types.ScanFolderTypes) ([]types.ProjectEntry, error) {
+func ScanFolder(sft *types.ScanFolderTypes, limit int, offset int) ([]types.ProjectEntry, error) {
 	path := filepath.Clean(sft.Path)
 
 	info, err := os.Stat(path)
@@ -33,7 +32,8 @@ func ScanFolder(sft *types.ScanFolderTypes) ([]types.ProjectEntry, error) {
 
 	var pes []types.ProjectEntry
 
-	for i, entry := range projectEntries {
+	for i, entry := range take(projectEntries, offset, limit) {
+
 		var pe types.ProjectEntry
 
 		if !entry.IsDir() {
@@ -64,4 +64,17 @@ func ScanFolder(sft *types.ScanFolderTypes) ([]types.ProjectEntry, error) {
 	}
 
 	return pes, nil
+}
+
+func take(items []os.DirEntry, start int, length int) []os.DirEntry {
+	if start >= len(items) {
+		return []os.DirEntry{}
+	}
+
+	end := start + length
+	if end > len(items) {
+		end = len(items)
+	}
+
+	return items[start:end]
 }

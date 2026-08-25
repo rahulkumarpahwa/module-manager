@@ -5,6 +5,7 @@ import (
 	"module-manager/services"
 	"module-manager/types"
 	"net/http"
+	"strconv"
 )
 
 type ScanFolderResponse struct {
@@ -16,8 +17,32 @@ type ScanFolderResponse struct {
 
 func ScanFolder(scan *types.ScanFolderTypes) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
 
-		data, err := services.ScanFolder(scan)
+		limit := 20 // default
+		offset := 0 // default
+
+		if value := query.Get("limit"); value != "" {
+			parsed, err := strconv.Atoi(value)
+			if err != nil || parsed <= 0 {
+				http.Error(w, "invalid limit", http.StatusBadRequest)
+				return
+			}
+
+			limit = parsed
+		}
+
+		if value := query.Get("offset"); value != "" {
+			parsed, err := strconv.Atoi(value)
+			if err != nil || parsed < 0 {
+				http.Error(w, "invalid offset", http.StatusBadRequest)
+				return
+			}
+
+			offset = parsed
+		}
+
+		data, err := services.ScanFolder(scan, limit, offset)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
