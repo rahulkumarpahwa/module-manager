@@ -80,6 +80,8 @@ func (s *Services) ScanMainFolder(limit int, offset int) ([]types.Project, error
 	}
 
 	s.MainFolderInfo.ProjectCount = len(entries)
+	s.MainFolderInfo.Projects = pes
+	s.MainFolderInfo.Index = makeIndex(pes)
 
 	return pes, nil
 }
@@ -97,32 +99,18 @@ func take(items []os.DirEntry, start int, length int) []os.DirEntry {
 	return items[start:end]
 }
 
-/**
-usersByID := make(map[int64]User, len(users))
+func makeIndex(projects []types.Project) map[string]types.Project {
+	projectsByID := make(map[string]types.Project, len(projects))
 
-for _, user := range users {
-	usersByID[user.ID] = user
-}
-
-user, ok := usersByID[42]
-if !ok {
-	// not found
-	return
-}
-
-fmt.Println(user.Name)
-
-*/
-
-func (s *Services) GetProjectInfoById() (*types.Project, error) {
-	if s.MainFolderInfo == nil {
-		return nil, errors.New("scanFolderTypes cannot be empty.")
-	}
-	if s.Project == nil {
-		return nil, errors.New("projectEntry cannot be empty.")
+	for _, project := range projects {
+		projectsByID[project.ID] = project
 	}
 
-	entries, err := os.ReadDir(s.Project.Path)
+	return projectsByID
+}
+
+/*
+entries, err := os.ReadDir(s.Project.Path)
 	if err != nil {
 		return nil, errors.New("GetProjectInfo: os.ReadDir: " + err.Error())
 	}
@@ -158,6 +146,23 @@ func (s *Services) GetProjectInfoById() (*types.Project, error) {
 
 	if project.HasGit {
 		project.LatestCommit, project.LatestCommitDate = utils.GetLatestCommitHashAndDate(s.Project.Path)
+	}
+
+
+*/
+
+func (s *Services) GetProjectInfoById(id string) (types.Project, error) {
+	if id == "" {
+		return types.Project{}, errors.New("id cannot be empty.")
+	}
+
+	if s.MainFolderInfo == nil {
+		return types.Project{}, errors.New("scanFolderTypes cannot be empty.")
+	}
+
+	project, ok := s.MainFolderInfo.Index[id]
+	if !ok {
+		return types.Project{}, fmt.Errorf("No project with the id: %s", id)
 	}
 
 	return project, nil

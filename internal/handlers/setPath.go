@@ -28,9 +28,12 @@ func (h *Handlers) SetPath(w http.ResponseWriter, r *http.Request) {
 	h.MainFolderInfo.Path = setPath.Path
 
 	resp := utils.JsonResponse{
-		Message: "path is set.",
+		Message: "path is set",
 		Status:  http.StatusOK,
 		Success: true,
+		Data: map[string]any{
+			"path" : h.MainFolderInfo.Path,
+		},
 	}
 	resp.ResponseSend(w)
 }

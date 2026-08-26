@@ -29,14 +29,15 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /healthz", handlers.Health)
+	mux.HandleFunc("GET /api/healthz", handlers.Health)
 	mux.HandleFunc("POST /api/set-path", handlers.SetPath)
-	mux.HandleFunc("POST /api/folders/scan", handlers.ScanMainFolder)
+	mux.HandleFunc("POST /api/main/scan", handlers.ScanMainFolder)
+	mux.HandleFunc("GET /api/project/{id}", handlers.GetProjectInfoById)
 
 	server := http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: mux,
-		// task set these values in the config as well below.
+		//todo: task set these values in the config as well below.
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 30,
 		IdleTimeout:  time.Second * 60,

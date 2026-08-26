@@ -4,7 +4,8 @@ type MainFolderInfo struct {
 	Path         string
 	TotalSize    int64
 	ProjectCount int
-	Index        map[int64]Project
+	Projects     []Project
+	Index        map[string]Project
 }
 
 func NewMainFolderInfo() *MainFolderInfo {
