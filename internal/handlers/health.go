@@ -12,7 +12,7 @@ type healthResponse struct {
 	Message     string    `json:"message"`
 }
 
-func Health(w http.ResponseWriter, r *http.Request) {
+func (h* Handlers) Health(w http.ResponseWriter, r *http.Request) {
 	resp := healthResponse{
 		Success:     true,
 		CurrentTime: time.Now().Local(),

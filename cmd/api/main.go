@@ -5,9 +5,8 @@ import (
 	"log"
 	"module-manager/config"
 	"module-manager/internal/handlers"
+	"module-manager/services"
 	"module-manager/types"
-
-	// "module-manager/utils"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,18 +16,21 @@ import (
 
 func main() {
 	log.SetFlags(log.Ltime | log.Ldate)
-	scan := types.ScanFolderTypes{}
 
 	cfg, err := config.Open()
 	if err != nil {
 		log.Fatalf("main.config.Open: %v", err.Error())
 	}
 
+	mainFolderInfo := types.NewMainFolderInfo()
+	services := services.NewServices(mainFolderInfo)
+	handlers := handlers.NewHandlers(mainFolderInfo, services)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", handlers.Health)
-	mux.HandleFunc("POST /api/set-path", handlers.SetPath(&scan))
-	mux.HandleFunc("POST /api/folders/scan", handlers.ScanFolder(&scan))
+	mux.HandleFunc("POST /api/set-path", handlers.SetPath)
+	mux.HandleFunc("POST /api/folders/scan", handlers.ScanFolder)
 
 	server := http.Server{
 		Addr:    ":" + cfg.Port,
