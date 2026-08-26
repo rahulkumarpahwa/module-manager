@@ -3,8 +3,14 @@ package types
 import "time"
 
 type Project struct {
-	ProjectEntry
-	PackageManager   string    `json:"package_manager"`
+	ID               string    `json:"id"`
+	Name             string    `json:"name"`
+	Path             string    `json:"path"`
+	IsDir            bool      `json:"is_dir"`
+	TotalSize        int64     `json:"total_size"`
+	DateCreated      time.Time `json:"date_created"`
+	DateModified     time.Time `json:"date_modified"`
+	PackageManager   *string   `json:"package_manager"`
 	Libraries        []string  `json:"libraries"`
 	HasPackageJson   bool      `json:"has_package_json"`
 	HasNodeModules   bool      `json:"has_node_modules"`
@@ -15,5 +21,3 @@ type Project struct {
 	LatestCommitDate time.Time `json:"latest_commit_date"`
 	ListFiles        []string  `json:"list_files"`
 }
-
-// todo : add the last modified date and creation date of the Project as well.

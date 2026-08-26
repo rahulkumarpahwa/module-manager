@@ -2,20 +2,20 @@ package handlers
 
 import (
 	"encoding/json"
-	"module-manager/types"
-	"module-manager/utils"
+	"github.com/rahulkumarpahwa/module-manager/types"
+	"github.com/rahulkumarpahwa/module-manager/utils"
 	"net/http"
 	"strconv"
 )
 
-type ScanFolderResponse struct {
-	Path          string               `json:"path"`
-	TotalProjects int                  `json:"total_projects"`
-	TotalSize     string               `json:"total_size"`
-	Projects      []types.ProjectEntry `json:"projects"`
+type ScanMainFolderResponse struct {
+	Path          string          `json:"path"`
+	TotalProjects int             `json:"total_projects"`
+	TotalSize     string          `json:"total_size"`
+	Projects      []types.Project `json:"projects"`
 }
 
-func (h *Handlers) ScanFolder(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) ScanMainFolder(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
 	limit := 20 // default
@@ -41,12 +41,12 @@ func (h *Handlers) ScanFolder(w http.ResponseWriter, r *http.Request) {
 		offset = parsed
 	}
 
-	data, err := h.Services.ScanFolder(limit, offset)
+	data, err := h.Services.ScanMainFolder(limit, offset)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	resp := &ScanFolderResponse{}
+	resp := &ScanMainFolderResponse{}
 
 	resp.Path = h.MainFolderInfo.Path
 	resp.TotalProjects = h.MainFolderInfo.ProjectCount

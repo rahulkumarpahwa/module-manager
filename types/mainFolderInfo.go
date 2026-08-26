@@ -1,9 +1,10 @@
 package types
 
 type MainFolderInfo struct {
-	Path         string `json:"path"`
-	TotalSize    int64  `json:"total_size"`
-	ProjectCount int    `json:"project_count"`
+	Path         string
+	TotalSize    int64
+	ProjectCount int
+	Index        map[int64]Project
 }
 
 func NewMainFolderInfo() *MainFolderInfo {

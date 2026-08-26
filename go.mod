@@ -1,4 +1,4 @@
-module module-manager
+module github.com/rahulkumarpahwa/module-manager
 
 go 1.25.6
 

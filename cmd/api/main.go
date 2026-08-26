@@ -3,15 +3,16 @@ package main
 import (
 	"context"
 	"log"
-	"module-manager/config"
-	"module-manager/internal/handlers"
-	"module-manager/services"
-	"module-manager/types"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/rahulkumarpahwa/module-manager/config"
+	"github.com/rahulkumarpahwa/module-manager/internal/handlers"
+	"github.com/rahulkumarpahwa/module-manager/services"
+	"github.com/rahulkumarpahwa/module-manager/types"
 )
 
 func main() {
@@ -30,7 +31,7 @@ func main() {
 
 	mux.HandleFunc("GET /healthz", handlers.Health)
 	mux.HandleFunc("POST /api/set-path", handlers.SetPath)
-	mux.HandleFunc("POST /api/folders/scan", handlers.ScanFolder)
+	mux.HandleFunc("POST /api/folders/scan", handlers.ScanMainFolder)
 
 	server := http.Server{
 		Addr:    ":" + cfg.Port,

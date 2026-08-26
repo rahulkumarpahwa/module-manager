@@ -3,15 +3,16 @@ package services
 import (
 	"errors"
 	"fmt"
+	"github.com/rahulkumarpahwa/module-manager/types"
+	"github.com/rahulkumarpahwa/module-manager/utils"
 	"log"
-	"module-manager/types"
-	"module-manager/utils"
 	"os"
 	"path/filepath"
 )
 
 type Services struct {
 	MainFolderInfo *types.MainFolderInfo
+	Project        *types.Project
 }
 
 func NewServices(mainFolderInfo *types.MainFolderInfo) *Services {
@@ -20,7 +21,7 @@ func NewServices(mainFolderInfo *types.MainFolderInfo) *Services {
 	}
 }
 
-func (s *Services) ScanFolder(limit int, offset int) ([]types.ProjectEntry, error) {
+func (s *Services) ScanMainFolder(limit int, offset int) ([]types.Project, error) {
 	if s.MainFolderInfo.Path == "" {
 		return nil, errors.New("path must exist.")
 	}
@@ -44,13 +45,13 @@ func (s *Services) ScanFolder(limit int, offset int) ([]types.ProjectEntry, erro
 		return nil, errors.New("os.ReadDir: " + err.Error())
 	}
 
-	var pes []types.ProjectEntry
+	var pes []types.Project
 
 	entries := take(projectEntries, offset, limit)
 
 	for i, entry := range entries {
 
-		var pe types.ProjectEntry
+		var pe types.Project
 
 		if !entry.IsDir() {
 			// when entry is not a Dir we will not consider.
@@ -67,7 +68,7 @@ func (s *Services) ScanFolder(limit int, offset int) ([]types.ProjectEntry, erro
 			return nil, errors.New("utils.GetDirSize: " + err.Error())
 		}
 
-		pe = types.ProjectEntry{
+		pe = types.Project{
 			ID:        fmt.Sprintf("%d%s", i+1, name),
 			Name:      name,
 			Path:      path,
@@ -113,15 +114,15 @@ fmt.Println(user.Name)
 
 */
 
-func (s *Services) GetProjectInfo(projectEntry *types.ProjectEntry) (*types.Project, error) {
+func (s *Services) GetProjectInfoById() (*types.Project, error) {
 	if s.MainFolderInfo == nil {
 		return nil, errors.New("scanFolderTypes cannot be empty.")
 	}
-	if projectEntry == nil {
+	if s.Project == nil {
 		return nil, errors.New("projectEntry cannot be empty.")
 	}
 
-	entries, err := os.ReadDir(projectEntry.Path)
+	entries, err := os.ReadDir(s.Project.Path)
 	if err != nil {
 		return nil, errors.New("GetProjectInfo: os.ReadDir: " + err.Error())
 	}
@@ -147,7 +148,7 @@ func (s *Services) GetProjectInfo(projectEntry *types.ProjectEntry) (*types.Proj
 	}
 
 	if project.HasNodeModules {
-		path := filepath.Join(projectEntry.Path, "node_modules")
+		path := filepath.Join(project.Path, "node_modules")
 		size, err := utils.GetDirSize(path)
 		if err != nil {
 			return nil, errors.New("GetProjectInfo: utils.GetDirSize: " + err.Error())
@@ -156,7 +157,7 @@ func (s *Services) GetProjectInfo(projectEntry *types.ProjectEntry) (*types.Proj
 	}
 
 	if project.HasGit {
-		project.LatestCommit, project.LatestCommitDate = utils.GetLatestCommitHashAndDate(projectEntry.Path)
+		project.LatestCommit, project.LatestCommitDate = utils.GetLatestCommitHashAndDate(s.Project.Path)
 	}
 
 	return project, nil

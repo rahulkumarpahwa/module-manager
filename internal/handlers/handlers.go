@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"module-manager/services"
-	"module-manager/types"
+	"github.com/rahulkumarpahwa/module-manager/services"
+	"github.com/rahulkumarpahwa/module-manager/types"
 )
 
 type Handlers struct {
