@@ -60,13 +60,13 @@ func main() {
 
 	<-stop
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
 	log.Print("Server Shutdown in...")
-	for i := 5; i > 0; i-- {
+	for i := 10; i > 0; i-- {
 		log.Printf("%d", i)
-		time.Sleep(time.Millisecond * 10)
+		time.Sleep(time.Millisecond * 100)
 	}
 
 	err = server.Shutdown(ctx)
