@@ -1,2 +1,4 @@
 run:
-	@go run ./cmd/api -path C:\Programming\projects
+	@go run ./cmd/api
+continue:
+	@air

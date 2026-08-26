@@ -3,6 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/rahulkumarpahwa/module-manager/internal/utils"
 )
 
 type SetPathType struct {
@@ -25,11 +27,10 @@ func (h *Handlers) SetPath(w http.ResponseWriter, r *http.Request) {
 
 	h.MainFolderInfo.Path = setPath.Path
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(struct {
-		Success string `json:"success"`
-	}{
-		Success: "ok",
-	})
+	resp := utils.JsonResponse{
+		Message: "path is set.",
+		Status:  http.StatusOK,
+		Success: true,
+	}
+	resp.ResponseSend(w)
 }
