@@ -1,20 +1,26 @@
 package utils
 
 import (
-	"os"
+	"io/fs"
 	"path/filepath"
 )
 
 // In go, we can't have the total folder size directly, we need to add the size of the each file of directory to get total.
-func GetDirSize(path string) (int64, error) {
-	var total int64
+type DirSize struct {
+	Bytes int64   `json:"bytes"`
+	KB    float64 `json:"kb"`
+	MB    float64 `json:"mb"`
+	GB    float64 `json:"gb"`
+}
 
-	err := filepath.WalkDir(path, func(path string, entry os.DirEntry, err error) error {
+func GetDirSize(root string) (DirSize, error) {
+	var bytes int64
+
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// Don't add directories themselves
 		if entry.IsDir() {
 			return nil
 		}
@@ -24,9 +30,18 @@ func GetDirSize(path string) (int64, error) {
 			return err
 		}
 
-		total += info.Size()
+		bytes += info.Size()
 		return nil
 	})
 
-	return total, err
+	if err != nil {
+		return DirSize{}, err
+	}
+
+	return DirSize{
+		Bytes: bytes,
+		KB:    float64(bytes) / 1024,
+		MB:    float64(bytes) / (1024 * 1024),
+		GB:    float64(bytes) / (1024 * 1024 * 1024),
+	}, nil
 }

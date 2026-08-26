@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"encoding/json"
-	"github.com/rahulkumarpahwa/module-manager/types"
-	"github.com/rahulkumarpahwa/module-manager/utils"
 	"net/http"
 	"strconv"
+
+	"github.com/rahulkumarpahwa/module-manager/internal/utils"
+	"github.com/rahulkumarpahwa/module-manager/types"
 )
 
 type ScanMainFolderResponse struct {
@@ -44,16 +44,17 @@ func (h *Handlers) ScanMainFolder(w http.ResponseWriter, r *http.Request) {
 	data, err := h.Services.ScanMainFolder(limit, offset)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	resp := &ScanMainFolderResponse{}
 
-	resp.Path = h.MainFolderInfo.Path
-	resp.TotalProjects = h.MainFolderInfo.ProjectCount
-	resp.TotalSize = utils.FormatSize(h.MainFolderInfo.TotalSize)
-	resp.Projects = data
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(resp)
+	resp := utils.JsonResponse{
+		Message: "Main Path Scan Completed",
+		Status:  http.StatusOK,
+		Success: true,
+		Data: map[string]any{
+			"directory_details": data,
+		},
+	}
+	resp.ResponseSend(w)
 }

@@ -12,7 +12,6 @@ import (
 
 type Services struct {
 	MainFolderInfo *types.MainFolderInfo
-	Project        *types.Project
 }
 
 func NewServices(mainFolderInfo *types.MainFolderInfo) *Services {
@@ -21,22 +20,22 @@ func NewServices(mainFolderInfo *types.MainFolderInfo) *Services {
 	}
 }
 
-func (s *Services) ScanMainFolder(limit int, offset int) ([]types.Project, error) {
+func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolderInfo, error) {
 	if s.MainFolderInfo.Path == "" {
-		return nil, errors.New("path must exist.")
+		return nil, errors.New("path must exist")
 	}
 
 	path := filepath.Clean(s.MainFolderInfo.Path)
 
 	info, err := os.Stat(path)
 	if err != nil {
-		log.Fatalf("folder does not exist.")
-		return nil, errors.New("folder does not exist.")
+		log.Fatalf("folder does not exist")
+		return nil, errors.New("folder does not exist")
 	}
 
 	if !info.IsDir() {
-		log.Fatalf("path is not a directory/folder.")
-		return nil, errors.New("path is not a directory/folder.")
+		log.Fatalf("path is not a directory/folder")
+		return nil, errors.New("path is not a directory/folder")
 	}
 
 	projectEntries, err := os.ReadDir(path)
@@ -49,33 +48,20 @@ func (s *Services) ScanMainFolder(limit int, offset int) ([]types.Project, error
 
 	entries := take(projectEntries, offset, limit)
 
-	for i, entry := range entries {
+	s.MainFolderInfo.TotalSize = 0
 
-		var pe types.Project
+	for i, entry := range entries {
 
 		if !entry.IsDir() {
 			// when entry is not a Dir we will not consider.
 			continue
 		}
-
-		var name = entry.Name()
-		var path = filepath.Join(path, name)
-
-		var size int64
-		size, err = utils.GetDirSize(path)
+		pe, err := getProjectDetails(path, entry, i)
 		if err != nil {
-			log.Fatal("utils.GetDirSize: " + err.Error())
-			return nil, errors.New("utils.GetDirSize: " + err.Error())
+			return nil, errors.New("ScanMainFolder.getProjectDetails: " + err.Error())
 		}
 
-		pe = types.Project{
-			ID:        fmt.Sprintf("%d%s", i+1, name),
-			Name:      name,
-			Path:      path,
-			IsDir:     entry.IsDir(),
-			TotalSize: size,
-		}
-		s.MainFolderInfo.TotalSize += size
+		s.MainFolderInfo.TotalSize += pe.TotalSize
 		pes = append(pes, pe)
 	}
 
@@ -83,7 +69,7 @@ func (s *Services) ScanMainFolder(limit int, offset int) ([]types.Project, error
 	s.MainFolderInfo.Projects = pes
 	s.MainFolderInfo.Index = makeIndex(pes)
 
-	return pes, nil
+	return s.MainFolderInfo, nil
 }
 
 func take(items []os.DirEntry, start int, length int) []os.DirEntry {
@@ -109,47 +95,65 @@ func makeIndex(projects []types.Project) map[string]types.Project {
 	return projectsByID
 }
 
-/*
-entries, err := os.ReadDir(s.Project.Path)
-	if err != nil {
-		return nil, errors.New("GetProjectInfo: os.ReadDir: " + err.Error())
+func getProjectDetails(path string, entry os.DirEntry, i int) (types.Project, error) {
+	if !entry.IsDir() {
+		return types.Project{}, errors.New("entry can't be non dir.")
 	}
 
-	project := &types.Project{}
+	pe := types.Project{}
+
+	pe.IsDir = true
+	pe.Name = entry.Name()
+	pe.ID = fmt.Sprintf("%d%s", i+1, pe.Name)
+	pe.Path = filepath.Join(path, pe.Name)
+
+	var size utils.DirSize
+	size, err := utils.GetDirSize(pe.Path)
+	if err != nil {
+		log.Fatal("utils.GetDirSize: " + err.Error())
+		return types.Project{}, errors.New("utils.GetDirSize: " + err.Error())
+	}
+	pe.TotalSize = size.Bytes
+
+	entries, err := os.ReadDir(pe.Path)
+	if err != nil {
+		return types.Project{}, errors.New("services.getProjectDetails: os.ReadDir: " + err.Error())
+	}
 
 	for _, entry := range entries {
 		var name = entry.Name()
 
 		if name == "package.json" {
-			project.HasPackageJson = true
+			pe.HasPackageJson = true
 		}
 
 		if name == "node_modules" {
-			project.HasNodeModules = true
+			pe.HasNodeModules = true
 		}
 
 		if name == ".git" {
-			project.HasGit = true
+			pe.HasGit = true
 		}
 
-		project.ListFiles = append(project.ListFiles, name)
+		pe.ListFiles = append(pe.ListFiles, name)
 	}
 
-	if project.HasNodeModules {
-		path := filepath.Join(project.Path, "node_modules")
+	if pe.HasNodeModules {
+		path := filepath.Join(pe.Path, "node_modules")
 		size, err := utils.GetDirSize(path)
 		if err != nil {
-			return nil, errors.New("GetProjectInfo: utils.GetDirSize: " + err.Error())
+			return types.Project{}, errors.New("services.getProjectDetails: utils.GetDirSize: " + err.Error())
+
 		}
-		project.NodeModulesSize = size
+		pe.NodeModulesSize = size.Bytes
 	}
 
-	if project.HasGit {
-		project.LatestCommit, project.LatestCommitDate = utils.GetLatestCommitHashAndDate(s.Project.Path)
+	if pe.HasGit {
+		pe.LatestCommit, pe.LatestCommitDate = utils.GetLatestCommitHashAndDate(pe.Path)
 	}
 
-
-*/
+	return pe, nil
+}
 
 func (s *Services) GetProjectInfoById(id string) (types.Project, error) {
 	if id == "" {
