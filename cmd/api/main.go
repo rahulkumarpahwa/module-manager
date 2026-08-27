@@ -46,9 +46,11 @@ func main() {
 	log.Printf("Server is Listening at http://localhost:%s", cfg.Port)
 
 	go func() {
-		err = server.ListenAndServe()
+		err := server.ListenAndServe()
 		if err != nil {
-			if err != http.ErrServerClosed {
+			if err == http.ErrServerClosed {
+				// skip
+			} else {
 				log.Fatalf("main.server.ListenAndServer: %v", err)
 			}
 		}
@@ -60,13 +62,13 @@ func main() {
 
 	<-stop
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	log.Print("Server Shutdown in...")
-	for i := 10; i > 0; i-- {
+	for i := 5; i > 0; i-- {
 		log.Printf("%d", i)
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Second * 1)
 	}
 
 	err = server.Shutdown(ctx)

@@ -58,6 +58,11 @@ func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolderInfo,
 			continue
 		}
 
+		if entry.Name() == "" {
+			// No entry without the Name
+			continue
+		}
+
 		wg.Add(1)
 		go func(path string, entry os.DirEntry, i int) (*types.Project, error) {
 			defer wg.Done()
@@ -114,7 +119,7 @@ func getProjectDetails(path string, entry os.DirEntry, i int) (types.Project, er
 
 	pe := types.Project{}
 
-	pe.IsDir = true
+	pe.IsDir = entry.IsDir()
 	pe.Name = entry.Name()
 	pe.ID = fmt.Sprintf("%d%s", i+1, pe.Name)
 	pe.Path = filepath.Join(path, pe.Name)

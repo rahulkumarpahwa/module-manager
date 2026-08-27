@@ -156,9 +156,9 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/folders/scan?limit=20&offset=0",
+							"raw": "{{baseUrl}}/api/main/scan?limit=20&offset=0",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "folders", "scan"],
+							"path": ["api", "main", "scan"],
 							"query": [
 								{
 									"key": "limit",
@@ -172,7 +172,7 @@
 								}
 							]
 						},
-						"description": "`POST /api/folders/scan` → `handlers.ScanFolder`\n\nScans the parent folder previously set via `/api/set-path`, reads its immediate subdirectories and returns basic info for each project (id, name, path, recursive size).\n\nQuery params:\n- `limit` (optional, default 20)\n- `offset` (optional, default 0)\n\nErrors (400):\n- `invalid limit` / `invalid offset` – non-numeric or out-of-range values.\n- `folder does not exist.` / `path is not a directory/folder.` – bad stored path.\n\nCall `Set Path` first, otherwise no folder is configured."
+						"description": "`POST /api/main/scan` → `handlers.ScanFolder`\n\nScans the parent folder previously set via `/api/set-path`, reads its immediate subdirectories and returns basic info for each project (id, name, path, recursive size).\n\nQuery params:\n- `limit` (optional, default 20)\n- `offset` (optional, default 0)\n\nErrors (400):\n- `invalid limit` / `invalid offset` – non-numeric or out-of-range values.\n- `folder does not exist.` / `path is not a directory/folder.` – bad stored path.\n\nCall `Set Path` first, otherwise no folder is configured."
 					},
 					"response": [
 						{
@@ -181,9 +181,9 @@
 								"method": "POST",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/api/folders/scan?limit=20&offset=0",
+									"raw": "{{baseUrl}}/api/main/scan?limit=20&offset=0",
 									"host": ["{{baseUrl}}"],
-									"path": ["api", "folders", "scan"],
+									"path": ["api", "main", "scan"],
 									"query": [
 										{
 											"key": "limit",
@@ -214,9 +214,9 @@
 								"method": "POST",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/api/folders/scan?limit=-1&offset=0",
+									"raw": "{{baseUrl}}/api/main/scan?limit=-1&offset=0",
 									"host": ["{{baseUrl}}"],
-									"path": ["api", "folders", "scan"],
+									"path": ["api", "main", "scan"],
 									"query": [
 										{
 											"key": "limit",
