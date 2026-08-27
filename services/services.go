@@ -3,11 +3,13 @@ package services
 import (
 	"errors"
 	"fmt"
-	"github.com/rahulkumarpahwa/module-manager/types"
-	"github.com/rahulkumarpahwa/module-manager/utils"
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
+
+	"github.com/rahulkumarpahwa/module-manager/types"
+	"github.com/rahulkumarpahwa/module-manager/utils"
 )
 
 type Services struct {
@@ -44,29 +46,39 @@ func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolderInfo,
 		return nil, errors.New("os.ReadDir: " + err.Error())
 	}
 
-	var pes []types.Project
-
 	entries := take(projectEntries, offset, limit)
+	pes := make([]types.Project, len(entries))
 
 	s.MainFolderInfo.TotalSize = 0
+	var wg sync.WaitGroup
 
 	for i, entry := range entries {
-
 		if !entry.IsDir() {
 			// when entry is not a Dir we will not consider.
 			continue
 		}
-		pe, err := getProjectDetails(path, entry, i)
-		if err != nil {
-			return nil, errors.New("ScanMainFolder.getProjectDetails: " + err.Error())
-		}
 
-		s.MainFolderInfo.TotalSize += pe.TotalSize
-		pes = append(pes, pe)
+		wg.Add(1)
+		go func(path string, entry os.DirEntry, i int) (*types.Project, error) {
+			defer wg.Done()
+			var pe types.Project
+			pe, err = getProjectDetails(path, entry, i)
+			if err != nil {
+				return nil, errors.New("ScanMainFolder.getProjectDetails: " + err.Error())
+			}
+			pes[i] = pe
+			return nil, nil
+		}(path, entry, i)
+
 	}
+	wg.Wait()
 
 	s.MainFolderInfo.ProjectCount = len(entries)
 	s.MainFolderInfo.Projects = pes
+	for _, project := range s.MainFolderInfo.Projects {
+		s.MainFolderInfo.TotalSize += project.TotalSize
+	}
+	s.MainFolderInfo.TotalSizeStr = utils.FormatSize(s.MainFolderInfo.TotalSize)
 	s.MainFolderInfo.Index = makeIndex(pes)
 
 	return s.MainFolderInfo, nil
@@ -114,6 +126,7 @@ func getProjectDetails(path string, entry os.DirEntry, i int) (types.Project, er
 		return types.Project{}, errors.New("utils.GetDirSize: " + err.Error())
 	}
 	pe.TotalSize = size.Bytes
+	pe.TotalSizeStr = utils.FormatSize(pe.TotalSize)
 
 	entries, err := os.ReadDir(pe.Path)
 	if err != nil {
@@ -146,6 +159,7 @@ func getProjectDetails(path string, entry os.DirEntry, i int) (types.Project, er
 
 		}
 		pe.NodeModulesSize = size.Bytes
+		pe.NodeModulesSizeStr = utils.FormatSize(pe.NodeModulesSize)
 	}
 
 	if pe.HasGit {
