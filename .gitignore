@@ -33,3 +33,6 @@ go.work.sum
 
 #air
 tmp
+
+# bin folder
+bin
