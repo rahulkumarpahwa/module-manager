@@ -237,6 +237,86 @@
 							"body": "invalid limit"
 						}
 					]
+				},
+				{
+					"name": "Get Project By Id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/project/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "project", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1my-app",
+									"description": "Project id returned by `Scan Main Folder`. Ids are generated as `{index}{name}` (e.g. `1my-app`)."
+								}
+							]
+						},
+						"description": "`GET /api/project/{id}` → `handlers.GetProjectInfoById`\n\nLooks up a single project from the in-memory index built by `POST /api/main/scan` – run `Scan Main Folder` first.\n\nPath param:\n- `id` – project id returned by the scan. Ids are generated while scanning as `{index}{name}`, where index is the 1-based position of the entry within the scanned page (e.g. `1my-app`).\n\nSuccess (200):\n- Standard envelope returned by `utils.JsonResponse`: `message` = `project details by id`, `data.project` = full `types.Project` (human-readable sizes in `total_size_str` / `node_modules_size_str`, git info in `latest_commit` / `latest_commit_date`, top-level entries listed in `list_files`).\n- Note: `date_created`, `date_modified`, `package_manager`, `libraries` and `frameworks` are not populated by the current implementation (zero time / null).\n\nErrors (500, plain text):\n- Unknown id – or scan never ran – returns `h.Services.GetProjectInfoById No project with the id: <id>`."
+					},
+					"response": [
+						{
+							"name": "200 - Project details",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/project/:id",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "project", ":id"],
+									"variable": [
+										{
+											"key": "id",
+											"value": "1my-app"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"project details by id\",\n    \"status\": 200,\n    \"success\": true,\n    \"data\": {\n        \"project\": {\n            \"id\": \"1my-app\",\n            \"name\": \"my-app\",\n            \"path\": \"C:\\\\Programming\\\\projects\\\\my-app\",\n            \"is_dir\": true,\n            \"total_size\": 61728394,\n            \"total_size_str\": \"58.86 MB\",\n            \"date_created\": \"0001-01-01T00:00:00Z\",\n            \"date_modified\": \"0001-01-01T00:00:00Z\",\n            \"package_manager\": null,\n            \"libraries\": null,\n            \"has_package_json\": true,\n            \"has_node_modules\": true,\n            \"node_modules_size\": 12345678,\n            \"node_modules_size_str\": \"11.77 MB\",\n            \"has_git\": true,\n            \"frameworks\": null,\n            \"latest_commit\": \"ce68dae1db48cf45a7badef9c7011522111d7e1b\",\n            \"latest_commit_date\": \"2026-08-20T18:42:11Z\",\n            \"list_files\": [\n                \".git\",\n                \"node_modules\",\n                \"package.json\"\n            ]\n        }\n    }\n}"
+						},
+						{
+							"name": "500 - Unknown id",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/project/:id",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "project", ":id"],
+									"variable": [
+										{
+											"key": "id",
+											"value": "99nope"
+										}
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "text",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								}
+							],
+							"cookie": [],
+							"body": "h.Services.GetProjectInfoById No project with the id: 99nope"
+						}
+					]
 				}
 			]
 		}

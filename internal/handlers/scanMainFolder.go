@@ -5,15 +5,8 @@ import (
 	"strconv"
 
 	"github.com/rahulkumarpahwa/module-manager/internal/utils"
-	"github.com/rahulkumarpahwa/module-manager/types"
 )
 
-type ScanMainFolderResponse struct {
-	Path          string          `json:"path"`
-	TotalProjects int             `json:"total_projects"`
-	TotalSize     string          `json:"total_size"`
-	Projects      []types.Project `json:"projects"`
-}
 
 func (h *Handlers) ScanMainFolder(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
