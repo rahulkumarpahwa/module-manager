@@ -127,11 +127,16 @@ func getProjectDetails(path string, entry os.DirEntry, i int) (types.Project, er
 	var size utils.DirSize
 	size, err := utils.GetDirSize(pe.Path)
 	if err != nil {
-		log.Fatal("utils.GetDirSize: " + err.Error())
 		return types.Project{}, errors.New("utils.GetDirSize: " + err.Error())
 	}
 	pe.TotalSize = size.Bytes
 	pe.TotalSizeStr = utils.FormatSize(pe.TotalSize)
+	info, err := entry.Info()
+	if err != nil {
+		return types.Project{}, errors.New("Error getting info for :" + err.Error())
+	}
+
+	pe.DateModified, pe.DateCreated = utils.GetTimes(info)
 
 	entries, err := os.ReadDir(pe.Path)
 	if err != nil {
