@@ -11,7 +11,7 @@ type Project struct {
 	TotalSizeStr       string    `json:"total_size_str"`
 	DateCreated        time.Time `json:"date_created"`
 	DateModified       time.Time `json:"date_modified"`
-	PackageManager     *string   `json:"package_manager"`
+	PackageManager     string   `json:"package_manager"`
 	Libraries          []string  `json:"libraries"`
 	HasPackageJson     bool      `json:"has_package_json"`
 	HasNodeModules     bool      `json:"has_node_modules"`
@@ -21,5 +21,5 @@ type Project struct {
 	Frameworks         []string  `json:"frameworks"`
 	LatestCommit       string    `json:"latest_commit"`
 	LatestCommitDate   time.Time `json:"latest_commit_date"`
-	ListFiles          []string  `json:"list_files"`
+	UnderDir          []string  `json:"under_dir"`
 }

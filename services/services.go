@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/rahulkumarpahwa/module-manager/services/helpers"
 	"github.com/rahulkumarpahwa/module-manager/types"
 	"github.com/rahulkumarpahwa/module-manager/utils"
 )
@@ -137,6 +138,7 @@ func getProjectDetails(path string, entry os.DirEntry, i int) (types.Project, er
 	}
 
 	pe.DateModified, pe.DateCreated = utils.GetTimes(info)
+	// .Format(time.RFC3339)
 
 	entries, err := os.ReadDir(pe.Path)
 	if err != nil {
@@ -158,7 +160,18 @@ func getProjectDetails(path string, entry os.DirEntry, i int) (types.Project, er
 			pe.HasGit = true
 		}
 
-		pe.ListFiles = append(pe.ListFiles, name)
+		switch name {
+		case helpers.NPM:
+			pe.PackageManager = "npm"
+		case helpers.Bun:
+			pe.PackageManager = "bun"
+		case helpers.PNPM:
+			pe.PackageManager = "pnpm"
+		case helpers.YARN:
+			pe.PackageManager = "yarn"
+		}
+
+		pe.UnderDir = append(pe.UnderDir, name)
 	}
 
 	if pe.HasNodeModules {
