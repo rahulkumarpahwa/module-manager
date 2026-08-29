@@ -11,6 +11,7 @@ import (
 
 	"github.com/rahulkumarpahwa/module-manager/config"
 	"github.com/rahulkumarpahwa/module-manager/internal/handlers"
+	"github.com/rahulkumarpahwa/module-manager/internal/middleware"
 	"github.com/rahulkumarpahwa/module-manager/services"
 	"github.com/rahulkumarpahwa/module-manager/types"
 )
@@ -34,9 +35,11 @@ func main() {
 	mux.HandleFunc("POST /api/main/scan", handlers.ScanMainFolder)
 	mux.HandleFunc("GET /api/project/{id}", handlers.GetProjectInfoById)
 
+	loggingMux := middleware.LoggingMiddleware(mux)
+
 	server := http.Server{
 		Addr:    ":" + cfg.Port,
-		Handler: mux,
+		Handler: loggingMux,
 		//todo: task set these values in the config as well below.
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 30,
