@@ -161,14 +161,14 @@ func getProjectDetails(path string, entry os.DirEntry, i int) (types.Project, er
 		}
 
 		switch name {
-		case helpers.NPM:
-			pe.PackageManager = "npm"
-		case helpers.Bun:
-			pe.PackageManager = "bun"
-		case helpers.PNPM:
-			pe.PackageManager = "pnpm"
-		case helpers.YARN:
-			pe.PackageManager = "yarn"
+		case helpers.NpmLockfile:
+			pe.PackageManager = helpers.NPM
+		case helpers.BunLockfile:
+			pe.PackageManager = helpers.BUN
+		case helpers.PnpmLockfile:
+			pe.PackageManager = helpers.PNPM
+		case helpers.YarnLockfile:
+			pe.PackageManager = helpers.YARN
 		}
 
 		pe.UnderDir = append(pe.UnderDir, name)

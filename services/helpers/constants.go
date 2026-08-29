@@ -1,8 +1,16 @@
 package helpers
 
 const (
-	NPM  = "package-lock.json"
-	YARN = "yarn.lock"
-	PNPM = "pnpm-lock.yaml"
-	Bun = "bun.lockb"
+	NPM  = "npm"
+	YARN = "yarn"
+	PNPM = "pnpm"
+	BUN  = "bun"
 )
+
+const (
+	NpmLockfile  = "package-lock.json"
+	YarnLockfile = "yarn.lock"
+	PnpmLockfile = "pnpm-lock.yaml"
+	BunLockfile  = "bun.lock"
+)
+
