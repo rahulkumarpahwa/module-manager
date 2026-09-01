@@ -14,7 +14,7 @@ func (h *Handlers) GetProjectInfoById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	project, err := h.Services.GetProjectInfoById(id)
+	project, err := h.Services.GetEntryById(id)
 	if err != nil {
 		http.Error(w, "h.Services.GetProjectInfoById "+err.Error(), http.StatusInternalServerError)
 		return

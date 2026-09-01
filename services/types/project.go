@@ -31,3 +31,7 @@ type UnderProjectDir struct {
 	Size int64
 	Path string `json:"path,omitempty"`
 }
+
+func (p Project) GetID() string {
+	return p.ID
+}

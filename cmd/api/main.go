@@ -13,7 +13,7 @@ import (
 	"github.com/rahulkumarpahwa/module-manager/internal/handlers"
 	"github.com/rahulkumarpahwa/module-manager/internal/middleware"
 	"github.com/rahulkumarpahwa/module-manager/services"
-	"github.com/rahulkumarpahwa/module-manager/types"
+	"github.com/rahulkumarpahwa/module-manager/services/types"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 		log.Fatalf("main.config.Open: %v", err.Error())
 	}
 
-	mainFolderInfo := types.NewMainFolderInfo()
+	mainFolderInfo := types.NewMainFolder()
 	services := services.NewServices(mainFolderInfo)
 	handlers := handlers.NewHandlers(mainFolderInfo, services)
 

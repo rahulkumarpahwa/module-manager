@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/rahulkumarpahwa/module-manager/services/constants"
 	"github.com/rahulkumarpahwa/module-manager/services/types"
 )
 
@@ -60,14 +61,14 @@ func GenerateProjectDetails(projectPath string, entry os.DirEntry, i int) (*type
 		}
 
 		switch name {
-		case NpmLockfile:
-			pe.PackageManager = NPM
-		case BunLockfile:
-			pe.PackageManager = BUN
-		case PnpmLockfile:
-			pe.PackageManager = PNPM
-		case YarnLockfile:
-			pe.PackageManager = YARN
+		case constants.NpmLockfile:
+			pe.PackageManager = constants.NPM
+		case constants.BunLockfile:
+			pe.PackageManager = constants.BUN
+		case constants.PnpmLockfile:
+			pe.PackageManager = constants.PNPM
+		case constants.YarnLockfile:
+			pe.PackageManager = constants.YARN
 		}
 
 
@@ -82,7 +83,7 @@ func GenerateProjectDetails(projectPath string, entry os.DirEntry, i int) (*type
 
 	if pe.HasNodeModules {
 		path := filepath.Join(pe.Path, "node_modules")
-		size, err := GetNodeModulesSizeInBytes(path, WORKERS)
+		size, err := GetNodeModulesSizeInBytes(path, constants.WORKERS)
 		if err != nil {
 			return nil, fmt.Errorf("GenerateProjectDetails: %w", err)
 

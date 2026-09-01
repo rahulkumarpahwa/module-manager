@@ -2,15 +2,15 @@ package handlers
 
 import (
 	"github.com/rahulkumarpahwa/module-manager/services"
-	"github.com/rahulkumarpahwa/module-manager/types"
+	"github.com/rahulkumarpahwa/module-manager/services/types"
 )
 
 type Handlers struct {
-	MainFolderInfo *types.MainFolderInfo
+	MainFolderInfo *types.MainFolder
 	Services       *services.Services
 }
 
-func NewHandlers(mainFolderInfo *types.MainFolderInfo,
+func NewHandlers(mainFolderInfo *types.MainFolder,
 	services *services.Services) *Handlers {
 	return &Handlers{
 		MainFolderInfo: mainFolderInfo,

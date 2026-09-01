@@ -5,6 +5,7 @@ import (
 )
 
 type WorkSpace struct {
+	SNo					int 		`json:"s_no"`
 	ID                    string          `json:"id"`
 	Name                  string          `json:"name"`
 	WorkSpaceProjects      []Project `json:"projects"`
