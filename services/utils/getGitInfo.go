@@ -1,18 +1,29 @@
 package utils
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 	"time"
 )
 
-func GetLatestCommitHashAndDate(projectPath string) (string, time.Time) {
+type GitInfo struct {
+	LatestCommit     string
+	LatestCommitDate time.Time
+}
+
+// provides latest commit and
+func GetGitInfo(projectPath string) (*GitInfo, error) {
+
+	if projectPath == "" {
+		return nil, fmt.Errorf("GetGitInfo: project path can't be empty.")
+	}
+
 	cmd := exec.Command("git", "-C", projectPath, "rev-parse", "HEAD")
 
 	output, err := cmd.Output()
 	if err != nil {
-		// Not a Git repository or Git isn't available
-		return "", time.Time{}
+		return nil, err
 	}
 
 	latestCommit := strings.TrimSpace(string(output))
@@ -27,7 +38,7 @@ func GetLatestCommitHashAndDate(projectPath string) (string, time.Time) {
 
 	output, err = cmd.Output()
 	if err != nil {
-		return "", time.Time{}
+		return nil, err
 	}
 
 	latestCommitDate, err := time.Parse(
@@ -35,8 +46,12 @@ func GetLatestCommitHashAndDate(projectPath string) (string, time.Time) {
 		strings.TrimSpace(string(output)),
 	)
 	if err != nil {
-		return "", time.Time{}
+		return nil, err
 	}
 
-	return latestCommit, latestCommitDate
+	return &GitInfo{
+		LatestCommit:     latestCommit,
+		LatestCommitDate: latestCommitDate,
+	}, nil
+
 }

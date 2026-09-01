@@ -1,4 +1,4 @@
-package helpers
+package constants
 
 const (
 	NPM  = "npm"
@@ -14,3 +14,4 @@ const (
 	BunLockfile  = "bun.lock"
 )
 
+const WORKERS = 4

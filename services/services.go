@@ -8,49 +8,46 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/rahulkumarpahwa/module-manager/services/helpers"
-	"github.com/rahulkumarpahwa/module-manager/types"
-	"github.com/rahulkumarpahwa/module-manager/utils"
+	"github.com/rahulkumarpahwa/module-manager/services/types"
+	"github.com/rahulkumarpahwa/module-manager/services/utils"
 )
 
 type Services struct {
-	MainFolderInfo *types.MainFolderInfo
+	MainFolder *types.MainFolder
 }
 
-func NewServices(mainFolderInfo *types.MainFolderInfo) *Services {
+func NewServices(mainFolder *types.MainFolder) *Services {
 	return &Services{
-		MainFolderInfo: mainFolderInfo,
+		MainFolder: mainFolder,
 	}
 }
 
-func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolderInfo, error) {
-	if s.MainFolderInfo.Path == "" {
+func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolder, error) {
+	if s.MainFolder.Path == "" {
 		return nil, errors.New("path must exist")
 	}
 
-	path := filepath.Clean(s.MainFolderInfo.Path)
+	path := filepath.Clean(s.MainFolder.Path)
 
 	info, err := os.Stat(path)
 	if err != nil {
-		log.Fatalf("folder does not exist")
-		return nil, errors.New("folder does not exist")
+		return nil, fmt.Errorf("ScanMainFolder: %w", err)
 	}
 
 	if !info.IsDir() {
-		log.Fatalf("path is not a directory/folder")
-		return nil, errors.New("path is not a directory/folder")
+		return nil, fmt.Errorf("ScanMainFolder: path is not a directory/folder")
 	}
 
-	projectEntries, err := os.ReadDir(path)
+	Entries, err := os.ReadDir(path)
 	if err != nil {
 		log.Fatal("os.ReadDir: " + err.Error())
 		return nil, errors.New("os.ReadDir: " + err.Error())
 	}
 
-	entries := take(projectEntries, offset, limit)
+	entries := paginateEntries(Entries, offset, limit)
 	pes := make([]types.Project, len(entries))
 
-	s.MainFolderInfo.TotalSize = 0
+	s.MainFolder.TotalSize = 0
 	var wg sync.WaitGroup
 
 	for i, entry := range entries {
@@ -64,33 +61,34 @@ func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolderInfo,
 			continue
 		}
 
+		projectPath := filepath.Join(path, entry.Name())
+
 		wg.Add(1)
-		go func(path string, entry os.DirEntry, i int) (*types.Project, error) {
+		go func(projectPath string, entry os.DirEntry, i int) (*types.Project, error) {
 			defer wg.Done()
-			var pe types.Project
-			pe, err = getProjectDetails(path, entry, i)
+			pe, err := utils.GenerateProjectDetails(projectPath, entry, i)
 			if err != nil {
 				return nil, errors.New("ScanMainFolder.getProjectDetails: " + err.Error())
 			}
-			pes[i] = pe
+			pes[i] = *pe
 			return nil, nil
-		}(path, entry, i)
+		}(projectPath, entry, i)
 
 	}
 	wg.Wait()
 
-	s.MainFolderInfo.ProjectCount = len(entries)
-	s.MainFolderInfo.Projects = pes
-	for _, project := range s.MainFolderInfo.Projects {
-		s.MainFolderInfo.TotalSize += project.TotalSize
+	s.MainFolder.ProjectsCount = len(entries)
+	s.MainFolder.Projects = append(s.MainFolder.Projects, pes...)
+	
+	for _, project := range s.MainFolder.Projects {
+		s.MainFolder.TotalSize += project.Size
 	}
-	s.MainFolderInfo.TotalSizeStr = utils.FormatSize(s.MainFolderInfo.TotalSize)
-	s.MainFolderInfo.Index = makeIndex(pes)
+	s.MainFolder.Index = makeIndex(pes)
 
-	return s.MainFolderInfo, nil
+	return s.MainFolder, nil
 }
 
-func take(items []os.DirEntry, start int, length int) []os.DirEntry {
+func paginateEntries(items []os.DirEntry, start int, length int) []os.DirEntry {
 	if start >= len(items) {
 		return []os.DirEntry{}
 	}
@@ -103,8 +101,8 @@ func take(items []os.DirEntry, start int, length int) []os.DirEntry {
 	return items[start:end]
 }
 
-func makeIndex(projects []types.Project) map[string]types.Project {
-	projectsByID := make(map[string]types.Project, len(projects))
+func makeIndex(projects []types.Project) map[string]any {
+	projectsByID := make(map[string]any, len(projects))
 
 	for _, project := range projects {
 		projectsByID[project.ID] = project
@@ -113,98 +111,19 @@ func makeIndex(projects []types.Project) map[string]types.Project {
 	return projectsByID
 }
 
-func getProjectDetails(path string, entry os.DirEntry, i int) (types.Project, error) {
-	if !entry.IsDir() {
-		return types.Project{}, errors.New("entry can't be non dir.")
-	}
-
-	pe := types.Project{}
-
-	pe.IsDir = entry.IsDir()
-	pe.Name = entry.Name()
-	pe.ID = fmt.Sprintf("%d%s", i+1, pe.Name)
-	pe.Path = filepath.Join(path, pe.Name)
-
-	var size utils.DirSize
-	size, err := utils.GetDirSize(pe.Path)
-	if err != nil {
-		return types.Project{}, errors.New("utils.GetDirSize: " + err.Error())
-	}
-	pe.TotalSize = size.Bytes
-	pe.TotalSizeStr = utils.FormatSize(pe.TotalSize)
-	info, err := entry.Info()
-	if err != nil {
-		return types.Project{}, errors.New("Error getting info for :" + err.Error())
-	}
-
-	pe.DateModified, pe.DateCreated = utils.GetTimes(info)
-	// .Format(time.RFC3339)
-
-	entries, err := os.ReadDir(pe.Path)
-	if err != nil {
-		return types.Project{}, errors.New("services.getProjectDetails: os.ReadDir: " + err.Error())
-	}
-
-	for _, entry := range entries {
-		var name = entry.Name()
-
-		if name == "package.json" {
-			pe.HasPackageJson = true
-		}
-
-		if name == "node_modules" {
-			pe.HasNodeModules = true
-		}
-
-		if name == ".git" {
-			pe.HasGit = true
-		}
-
-		switch name {
-		case helpers.NpmLockfile:
-			pe.PackageManager = helpers.NPM
-		case helpers.BunLockfile:
-			pe.PackageManager = helpers.BUN
-		case helpers.PnpmLockfile:
-			pe.PackageManager = helpers.PNPM
-		case helpers.YarnLockfile:
-			pe.PackageManager = helpers.YARN
-		}
-
-		pe.UnderDir = append(pe.UnderDir, name)
-	}
-
-	if pe.HasNodeModules {
-		path := filepath.Join(pe.Path, "node_modules")
-		size, err := utils.GetDirSize(path)
-		if err != nil {
-			return types.Project{}, errors.New("services.getProjectDetails: utils.GetDirSize: " + err.Error())
-
-		}
-		pe.NodeModulesSize = size.Bytes
-		pe.NodeModulesSizeStr = utils.FormatSize(pe.NodeModulesSize)
-	}
-
-	if pe.HasGit {
-		pe.LatestCommit, pe.LatestCommitDate = utils.GetLatestCommitHashAndDate(pe.Path)
-	}
-
-	return pe, nil
-}
-
-func (s *Services) GetProjectInfoById(id string) (types.Project, error) {
+func (s *Services) GetItemInfoById(id string) (types.Project, error) {
 	if id == "" {
 		return types.Project{}, errors.New("id cannot be empty.")
 	}
 
-	if s.MainFolderInfo == nil {
+	if s.MainFolder == nil {
 		return types.Project{}, errors.New("scanFolderTypes cannot be empty.")
 	}
 
-	project, ok := s.MainFolderInfo.Index[id]
+	project, ok := s.MainFolder.Index[id]
 	if !ok {
 		return types.Project{}, fmt.Errorf("No project with the id: %s", id)
 	}
 
-	return project, nil
+	return (project), nil
 }
