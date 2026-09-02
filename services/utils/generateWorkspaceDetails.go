@@ -18,7 +18,7 @@ func GenerateWorkspaceDetails(
 
 	ws := types.WorkSpace{
 		SNo:  i,
-		ID:   generateID(),
+		ID:   GenerateID(),
 		Name: entry.Name(),
 	}
 
@@ -81,7 +81,6 @@ func GenerateWorkspaceDetails(
 				return
 			}
 
-			// Protect wsp from concurrent writes.
 			wspChan <- *project
 
 		}(projectPath, projectEntry)

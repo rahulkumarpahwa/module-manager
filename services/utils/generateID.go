@@ -4,6 +4,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func generateID() string {
+func GenerateID() string {
 	return uuid.New().String()
 }

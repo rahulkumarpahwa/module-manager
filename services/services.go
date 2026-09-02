@@ -1,11 +1,12 @@
 package services
 
 import (
-	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
-	"sync"
+
+	// "sync"
 
 	"github.com/rahulkumarpahwa/module-manager/services/types"
 	"github.com/rahulkumarpahwa/module-manager/services/utils"
@@ -33,97 +34,153 @@ func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolder, err
 		return nil, fmt.Errorf("ScanMainFolder: %w", err)
 	}
 
+	s.MainFolder.TotalSize = info.Size()
 	s.MainFolder.CreationDate, s.MainFolder.ModifiedDate = utils.GetTimes(info)
 
 	if !info.IsDir() {
 		return nil, fmt.Errorf("ScanMainFolder: path is not a directory/folder")
+
 	}
 
-	allEntries, err := os.ReadDir(path)
+	////////////////////////////////
+
+	const (
+		defaultLimit  = 20
+		defaultOffset = 0
+		maxLimit      = 20
+	)
+
+	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("ScanMainFolder: %w", err)
 	}
+	defer f.Close()
 
-	entries := paginateEntries(allEntries, offset, limit)
+	// Apply defaults.
+	if offset < defaultOffset {
+		offset = defaultOffset
+	}
 
-	pesChan := make(chan types.Project)
-	wsChan := make(chan types.WorkSpace)
+	if limit <= 0 {
+		limit = defaultLimit
+	}
 
-	s.MainFolder.TotalSize = 0
-	var wg sync.WaitGroup
+	if limit > maxLimit {
+		limit = maxLimit
+	}
 
-	for i, entry := range entries {
+	// Skip offset entries.
+	if offset > 0 {
+		_, err = f.Readdir(offset)
+		if err != nil && err != io.EOF {
+			return nil, fmt.Errorf("skip entries: %w", err)
+		}
+	}
+
+	// Read only up to limit entries.
+	entries, err := f.Readdir(limit)
+	if err != nil && err != io.EOF {
+		return nil, fmt.Errorf("read entries: %w", err)
+	}
+
+	s.MainFolder.FirstRunEntryCount = len(entries)
+
+	///////////////////
+
+	for _, entry := range entries {
 		if !entry.IsDir() {
-			continue
+			return s.MainFolder, nil
 		}
 
-		if entry.Name() == "" {
-			continue
-		}
+		var firstRunEntry types.FirstRunEntry
+		firstRunEntry.ID = utils.GenerateID()
+		firstRunEntry.Name = entry.Name()
+		firstRunEntry.Path = filepath.Join(path, entry.Name())
+		firstRunEntry.ModifiedDate = entry.ModTime()
+		// firstRunEntry.CreationDate =  // fix later
 
-		entryPath := filepath.Join(path, entry.Name())
+		detectInfo := utils.DetectProject(firstRunEntry.Path)
+		firstRunEntry.Language = string(detectInfo.Language)
+		firstRunEntry.IsProject = detectInfo.IsProject
+		firstRunEntry.IsWorkspace = !firstRunEntry.IsProject
 
-		wg.Add(1)
-		go func(entryPath string, entry os.DirEntry, i int) error {
-			defer wg.Done()
-
-			if utils.IsProject(entryPath) {
-
-				pe, err := utils.GenerateProjectDetails(entryPath, entry, i)
-				if err != nil {
-					return fmt.Errorf("ScanMainFolder: %w", err)
-				}
-				pesChan <- *pe
-
-			} else if utils.IsWorkspace(entryPath) {
-
-				we, err := utils.GenerateWorkspaceDetails(entryPath, entry, i)
-				if err != nil {
-					return fmt.Errorf("ScanMainFolder: %w", err)
-				}
-				wsChan <- *we
-			}
-
-			return nil
-		}(entryPath, entry, i)
-	}
-	go func() {
-		wg.Wait()
-		close(pesChan)
-		close(wsChan)
-	}()
-
-	var pes []types.Project
-	var ws []types.WorkSpace
-
-	for pesChan != nil || wsChan != nil {
-		select {
-		case result, ok := <-pesChan:
-			if !ok {
-				pesChan = nil
-				continue
-			}
-			pes = append(pes, result)
-
-		case result, ok := <-wsChan:
-			if !ok {
-				wsChan = nil
-				continue
-			}
-			ws = append(ws, result)
-		}
+		s.MainFolder.FirstRunEntries = append(s.MainFolder.FirstRunEntries, firstRunEntry)
 	}
 
-	s.MainFolder.Projects = append(s.MainFolder.Projects, pes...)
-	s.MainFolder.ProjectsCount = len(s.MainFolder.Projects)
-	s.MainFolder.WorkSpaces = append(s.MainFolder.WorkSpaces, ws...)
-	s.MainFolder.WorkSpacesCount = len(s.MainFolder.WorkSpaces)
+	// pesChan := make(chan types.Project)
+	// wsChan := make(chan types.WorkSpace)
 
-	for _, project := range s.MainFolder.Projects {
-		s.MainFolder.TotalSize += project.Size
-	}
-	s.MainFolder.IndexProject = makeIndexProject(s.MainFolder.Projects)
-	s.MainFolder.IndexWorkspace = makeIndexWorkspace(s.MainFolder.WorkSpaces)
+	// var wg sync.WaitGroup
+
+	// for i, entry := range entries {
+	// 	if !entry.IsDir() {
+	// 		continue
+	// 	}
+
+	// 	if entry.Name() == "" {
+	// 		continue
+	// 	}
+
+	// 	entryPath := filepath.Join(path, entry.Name())
+
+	// 	wg.Add(1)
+	// 	go func(entryPath string, entry os.DirEntry, i int) error {
+	// 		defer wg.Done()
+
+	// 		if utils.IsProject(entryPath) {
+
+	// 			pe, err := utils.GenerateProjectDetails(entryPath, entry, i)
+	// 			if err != nil {
+	// 				return fmt.Errorf("ScanMainFolder: %w", err)
+	// 			}
+	// 			pesChan <- *pe
+
+	// 		} else if utils.IsWorkspace(entryPath) {
+
+	// 			we, err := utils.GenerateWorkspaceDetails(entryPath, entry, i)
+	// 			if err != nil {
+	// 				return fmt.Errorf("ScanMainFolder: %w", err)
+	// 			}
+	// 			wsChan <- *we
+	// 		}
+
+	// 		return nil
+	// 	}(entryPath, entry, i)
+	// }
+	// go func() {
+	// 	wg.Wait()
+	// 	close(pesChan)
+	// 	close(wsChan)
+	// }()
+
+	// var pes []types.Project
+	// var ws []types.WorkSpace
+
+	// for pesChan != nil || wsChan != nil {
+	// 	select {
+	// 	case result, ok := <-pesChan:
+	// 		if !ok {
+	// 			pesChan = nil
+	// 			continue
+	// 		}
+	// 		pes = append(pes, result)
+
+	// 	case result, ok := <-wsChan:
+	// 		if !ok {
+	// 			wsChan = nil
+	// 			continue
+	// 		}
+	// 		ws = append(ws, result)
+	// 	}
+	// }
+
+	// s.MainFolder.Projects = append(s.MainFolder.Projects, pes...)
+	// s.MainFolder.ProjectsCount = len(s.MainFolder.Projects)
+	// s.MainFolder.WorkSpaces = append(s.MainFolder.WorkSpaces, ws...)
+	// s.MainFolder.WorkSpacesCount = len(s.MainFolder.WorkSpaces)
+
+	// s.MainFolder.IndexProject = makeIndexProject(s.MainFolder.Projects)
+	// s.MainFolder.IndexWorkspace = makeIndexWorkspace(s.MainFolder.WorkSpaces)
 
 	return s.MainFolder, nil
 }
@@ -169,22 +226,22 @@ func makeIndexWorkspace(entries []types.WorkSpace) map[string]types.WorkSpace {
 	return entriesByID
 }
 
-func (s *Services) GetEntryById(id string) (interface{}, error) {
-	if id == "" {
-		return nil, fmt.Errorf("GetEntryById: id cannot be empty.")
-	}
+// func (s *Services) GetEntryById(id string) (interface{}, error) {
+// 	if id == "" {
+// 		return nil, fmt.Errorf("GetEntryById: id cannot be empty.")
+// 	}
 
-	if s.MainFolder == nil {
-		return nil, errors.New("GetEntryById: mainfolder cannot be empty.")
-	}
+// 	if s.MainFolder == nil {
+// 		return nil, errors.New("GetEntryById: mainfolder cannot be empty.")
+// 	}
 
-	project, ok := s.MainFolder.IndexProject[id]
-	if !ok {
-		workspace, ok := s.MainFolder.IndexWorkspace[id]
-		if !ok {
-			return nil, fmt.Errorf("GetEntryById: No Entry (Project or Workspace) with the id: %s", id)
-		}
-		return &workspace, nil
-	}
-	return &project, nil
-}
+// 	project, ok := s.MainFolder.IndexProject[id]
+// 	if !ok {
+// 		workspace, ok := s.MainFolder.IndexWorkspace[id]
+// 		if !ok {
+// 			return nil, fmt.Errorf("GetEntryById: No Entry (Project or Workspace) with the id: %s", id)
+// 		}
+// 		return &workspace, nil
+// 	}
+// 	return &project, nil
+// }

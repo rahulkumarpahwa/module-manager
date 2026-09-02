@@ -27,8 +27,8 @@ type Project struct {
 }
 
 type UnderProjectDir struct {
-	Name string
-	Size int64
+	Name string `json:"name,omitempty"`
+	Size int64  `json:"size,omitempty"`
 	Path string `json:"path,omitempty"`
 }
 

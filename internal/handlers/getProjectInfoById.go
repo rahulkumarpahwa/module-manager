@@ -14,23 +14,23 @@ func (h *Handlers) GetProjectInfoById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if h.Services.MainFolder.IndexProject == nil {
-		http.Error(w, "h.Services.GetProjectInfoById: Project Index does not exist. ", http.StatusInternalServerError)
-		return
-	}
+	// if h.Services.MainFolder.IndexProject == nil {
+	// 	http.Error(w, "h.Services.GetProjectInfoById: Project Index does not exist. ", http.StatusInternalServerError)
+	// 	return
+	// }
 
-	project, err := h.Services.GetEntryById(id)
-	if err != nil {
-		http.Error(w, "h.Services.GetProjectInfoById "+err.Error(), http.StatusInternalServerError)
-		return
-	}
+	// project, err := h.Services.GetEntryById(id)
+	// if err != nil {
+	// 	http.Error(w, "h.Services.GetProjectInfoById "+err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
 
 	resp := utils.JsonResponse{
 		Message: "project details by id",
 		Status:  http.StatusOK,
 		Success: true,
 		Data: map[string]any{
-			"project": project,
+			// "project": project,
 		},
 	}
 	resp.ResponseSend(w)

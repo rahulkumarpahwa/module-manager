@@ -2,7 +2,6 @@ package utils
 
 import (
 	"os"
-	"path/filepath"
 )
 
 func IsWorkspace(dir string) bool {
@@ -16,9 +15,7 @@ func IsWorkspace(dir string) bool {
 			continue
 		}
 
-		child := filepath.Join(dir, entry.Name())
-
-		if IsProject(child) {
+		if IsProject(dir, entry.Name()) {
 			return true
 		}
 	}

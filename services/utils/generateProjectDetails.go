@@ -22,7 +22,7 @@ func GenerateProjectDetails(projectPath string, entry os.DirEntry, i int) (*type
 	pe := types.Project{}
 
 	pe.Name = entry.Name()
-	pe.ID = generateID()
+	pe.ID = GenerateID()
 	pe.Path = projectPath
 
 	var size int64
@@ -48,6 +48,11 @@ func GenerateProjectDetails(projectPath string, entry os.DirEntry, i int) (*type
 	for _, entry := range entries {
 		var name = entry.Name()
 
+		info, err := entry.Info()
+		if err != nil {
+			return nil, fmt.Errorf("GenerateProjectDetails: %w", err)
+		}
+
 		if name == "package.json" {
 			pe.HasPackageJson = true
 		}
@@ -72,9 +77,9 @@ func GenerateProjectDetails(projectPath string, entry os.DirEntry, i int) (*type
 		}
 
 		underProject := types.UnderProjectDir{
-			Name: name,
-			// Size :  // fix this
-			Path: filepath.Join(pe.Path, name),
+			Name:  name,
+			Size: info.Size(),
+			Path:  filepath.Join(pe.Path, name),
 		}
 
 		pe.UnderDir = append(pe.UnderDir, underProject)
