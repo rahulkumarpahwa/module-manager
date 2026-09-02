@@ -37,9 +37,11 @@ func main() {
 
 	loggingMux := middleware.LoggingMiddleware(mux)
 
+	corsMux := middleware.CorsMiddleware(loggingMux)
+
 	server := http.Server{
 		Addr:    ":" + cfg.Port,
-		Handler: loggingMux,
+		Handler: corsMux,
 		//todo: task set these values in the config as well below.
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 30,
