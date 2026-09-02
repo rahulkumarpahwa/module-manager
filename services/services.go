@@ -45,8 +45,8 @@ func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolder, err
 	}
 
 	entries := paginateEntries(allEntries, offset, limit)
-	pes := []types.Project{}
-	ws := []types.WorkSpace{}
+	var pes = make([]types.Project, len(entries))
+	var ws = make([]types.WorkSpace, len(entries))
 
 	s.MainFolder.TotalSize = 0
 	var wg sync.WaitGroup
@@ -70,7 +70,7 @@ func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolder, err
 				if err != nil {
 					return nil, fmt.Errorf("ScanMainFolder: %w", err)
 				}
-				pes = append(pes, *pe)
+				pes[i] = *pe
 				return nil, nil
 			}(entryPath, entry, i)
 		} else if utils.IsWorkspace(entryPath) {
@@ -82,7 +82,7 @@ func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolder, err
 				if err != nil {
 					return nil, fmt.Errorf("ScanMainFolder: %w", err)
 				}
-				ws = append(ws, *we)
+				ws[i] = *we
 				return nil, nil
 			}(entryPath, entry, i)
 		}
@@ -104,7 +104,15 @@ func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolder, err
 }
 
 func paginateEntries(items []os.DirEntry, start int, length int) []os.DirEntry {
+	if start < 0 {
+		return []os.DirEntry{}
+	}
+
 	if start >= len(items) {
+		return []os.DirEntry{}
+	}
+
+	if length < 0 {
 		return []os.DirEntry{}
 	}
 

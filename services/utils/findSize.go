@@ -17,10 +17,6 @@ func GetDirSizeInBytes(root string) (int64, error) {
 			return err
 		}
 
-		if entry.IsDir() {
-			return nil
-		}
-
 		if entry.IsDir() && entry.Name() == "node_modules" {
 			return fs.SkipDir
 		}

@@ -22,7 +22,7 @@ func GenerateProjectDetails(projectPath string, entry os.DirEntry, i int) (*type
 	pe := types.Project{}
 
 	pe.Name = entry.Name()
-	pe.ID = fmt.Sprintf("%d%s", i+1, pe.Name)
+	pe.ID = generateID()
 	pe.Path = projectPath
 
 	var size int64
@@ -71,9 +71,8 @@ func GenerateProjectDetails(projectPath string, entry os.DirEntry, i int) (*type
 			pe.PackageManager = constants.YARN
 		}
 
-
 		underProject := types.UnderProjectDir{
-			Name : name,
+			Name: name,
 			// Size :  // fix this
 			Path: filepath.Join(pe.Path, name),
 		}
