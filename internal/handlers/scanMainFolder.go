@@ -34,7 +34,7 @@ func (h *Handlers) ScanMainFolder(w http.ResponseWriter, r *http.Request) {
 		offset = parsed
 	}
 
-	data, err := h.Services.ScanMainFolder(limit, offset)
+	data, err := h.Services.ScanMainFolder(r.Context(), limit, offset)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

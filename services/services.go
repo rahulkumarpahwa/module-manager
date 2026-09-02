@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -21,9 +22,13 @@ func NewServices(mainFolder *types.MainFolder) *Services {
 	}
 }
 
-func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolder, error) {
+func (s *Services) ScanMainFolder(ctx context.Context, limit int, offset int) (*types.MainFolder, error) {
 	if s.MainFolder.Path == "" {
 		return nil, fmt.Errorf("ScanMainFolder: s.MainFolder.Path must exist")
+	}
+
+	if err := context.Canceled; err != nil {
+		return nil, fmt.Errorf("ScanMainFolder: %w", err)
 	}
 
 	path := filepath.Clean(s.MainFolder.Path)
@@ -45,8 +50,9 @@ func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolder, err
 	}
 
 	entries := paginateEntries(allEntries, offset, limit)
-	var pes = make([]types.Project, len(entries))
-	var ws = make([]types.WorkSpace, len(entries))
+
+	pesChan := make(chan types.Project)
+	wsChan := make(chan types.WorkSpace)
 
 	s.MainFolder.TotalSize = 0
 	var wg sync.WaitGroup
@@ -62,32 +68,56 @@ func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolder, err
 
 		entryPath := filepath.Join(path, entry.Name())
 
-		if utils.IsProject(entryPath) {
-			wg.Add(1)
-			go func(entryPath string, entry os.DirEntry, i int) (*types.Project, error) {
-				defer wg.Done()
+		wg.Add(1)
+		go func(entryPath string, entry os.DirEntry, i int) error {
+			defer wg.Done()
+
+			if utils.IsProject(entryPath) {
+
 				pe, err := utils.GenerateProjectDetails(entryPath, entry, i)
 				if err != nil {
-					return nil, fmt.Errorf("ScanMainFolder: %w", err)
+					return fmt.Errorf("ScanMainFolder: %w", err)
 				}
-				pes[i] = *pe
-				return nil, nil
-			}(entryPath, entry, i)
-		} else if utils.IsWorkspace(entryPath) {
-			wg.Add(1)
-			go func(entryPath string, entry os.DirEntry, i int) (*types.WorkSpace, error) {
-				defer wg.Done()
+				pesChan <- *pe
+
+			} else if utils.IsWorkspace(entryPath) {
 
 				we, err := utils.GenerateWorkspaceDetails(entryPath, entry, i)
 				if err != nil {
-					return nil, fmt.Errorf("ScanMainFolder: %w", err)
+					return fmt.Errorf("ScanMainFolder: %w", err)
 				}
-				ws[i] = *we
-				return nil, nil
-			}(entryPath, entry, i)
+				wsChan <- *we
+			}
+
+			return nil
+		}(entryPath, entry, i)
+	}
+	go func() {
+		wg.Wait()
+		close(pesChan)
+		close(wsChan)
+	}()
+
+	var pes []types.Project
+	var ws []types.WorkSpace
+
+	for pesChan != nil || wsChan != nil {
+		select {
+		case result, ok := <-pesChan:
+			if !ok {
+				pesChan = nil
+				continue
+			}
+			pes = append(pes, result)
+
+		case result, ok := <-wsChan:
+			if !ok {
+				wsChan = nil
+				continue
+			}
+			ws = append(ws, result)
 		}
 	}
-	wg.Wait()
 
 	s.MainFolder.Projects = append(s.MainFolder.Projects, pes...)
 	s.MainFolder.ProjectsCount = len(s.MainFolder.Projects)
