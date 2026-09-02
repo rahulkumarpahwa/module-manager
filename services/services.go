@@ -16,6 +16,12 @@ type Services struct {
 	MainFolder *types.MainFolder
 }
 
+const (
+	defaultLimit  = 20
+	defaultOffset = 0
+	maxLimit      = 50
+)
+
 func NewServices(mainFolder *types.MainFolder) *Services {
 	return &Services{
 		MainFolder: mainFolder,
@@ -42,21 +48,12 @@ func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolder, err
 
 	}
 
-	////////////////////////////////
-
-	const (
-		defaultLimit  = 20
-		defaultOffset = 0
-		maxLimit      = 20
-	)
-
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("ScanMainFolder: %w", err)
 	}
 	defer f.Close()
 
-	// Apply defaults.
 	if offset < defaultOffset {
 		offset = defaultOffset
 	}
@@ -69,7 +66,6 @@ func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolder, err
 		limit = maxLimit
 	}
 
-	// Skip offset entries.
 	if offset > 0 {
 		_, err = f.Readdir(offset)
 		if err != nil && err != io.EOF {
@@ -77,15 +73,12 @@ func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolder, err
 		}
 	}
 
-	// Read only up to limit entries.
 	entries, err := f.Readdir(limit)
 	if err != nil && err != io.EOF {
 		return nil, fmt.Errorf("read entries: %w", err)
 	}
 
 	s.MainFolder.FirstRunEntryCount = len(entries)
-
-	///////////////////
 
 	for _, entry := range entries {
 		if !entry.IsDir() {
@@ -97,7 +90,6 @@ func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolder, err
 		firstRunEntry.Name = entry.Name()
 		firstRunEntry.Path = filepath.Join(path, entry.Name())
 		firstRunEntry.ModifiedDate = entry.ModTime()
-		// firstRunEntry.CreationDate =  // fix later
 
 		detectInfo := utils.DetectProject(firstRunEntry.Path)
 		firstRunEntry.Language = string(detectInfo.Language)
