@@ -35,9 +35,8 @@ func GenerateWorkspaceDetails(
 	}
 
 	var (
-		wsp []types.Project
-		wg  sync.WaitGroup
-		mu  sync.Mutex
+		wg      sync.WaitGroup
+		wspChan = make(chan types.Project)
 	)
 
 	for i, projectEntry := range entries {
@@ -83,14 +82,21 @@ func GenerateWorkspaceDetails(
 			}
 
 			// Protect wsp from concurrent writes.
-			mu.Lock()
-			wsp = append(wsp, *project)
-			mu.Unlock()
+			wspChan <- *project
 
 		}(projectPath, projectEntry)
 	}
 
-	wg.Wait()
+	go func() {
+		wg.Wait()
+		close(wspChan)
+	}()
+
+	wsp := []types.Project{}
+
+	for result := range wspChan {
+		wsp = append(wsp, result)
+	}
 
 	ws.WorkSpaceProjects = append(ws.WorkSpaceProjects, wsp...)
 	ws.WorkSpaceProjectsCount = len(wsp)

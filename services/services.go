@@ -1,7 +1,6 @@
 package services
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -22,13 +21,9 @@ func NewServices(mainFolder *types.MainFolder) *Services {
 	}
 }
 
-func (s *Services) ScanMainFolder(ctx context.Context, limit int, offset int) (*types.MainFolder, error) {
+func (s *Services) ScanMainFolder(limit int, offset int) (*types.MainFolder, error) {
 	if s.MainFolder.Path == "" {
 		return nil, fmt.Errorf("ScanMainFolder: s.MainFolder.Path must exist")
-	}
-
-	if err := context.Canceled; err != nil {
-		return nil, fmt.Errorf("ScanMainFolder: %w", err)
 	}
 
 	path := filepath.Clean(s.MainFolder.Path)

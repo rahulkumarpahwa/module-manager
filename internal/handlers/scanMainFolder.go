@@ -7,7 +7,6 @@ import (
 	"github.com/rahulkumarpahwa/module-manager/internal/utils"
 )
 
-
 func (h *Handlers) ScanMainFolder(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
@@ -34,12 +33,11 @@ func (h *Handlers) ScanMainFolder(w http.ResponseWriter, r *http.Request) {
 		offset = parsed
 	}
 
-	data, err := h.Services.ScanMainFolder(r.Context(), limit, offset)
+	data, err := h.Services.ScanMainFolder(limit, offset)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
 
 	resp := utils.JsonResponse{
 		Message: "Main Path Scan Completed",
