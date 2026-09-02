@@ -1,11 +1,11 @@
-package utils
+package services
 
 import (
 	"fmt"
 	"os/exec"
 )
 
-func OpenVSCode(projectPath string) error {
+func (s *Services) OpenVSCode(projectPath string) error {
 	if projectPath == "" {
 		return fmt.Errorf("open vscode: project path can't be empty")
 	}

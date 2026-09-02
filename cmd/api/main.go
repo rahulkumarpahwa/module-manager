@@ -33,6 +33,8 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", handlers.Health)
 	mux.HandleFunc("POST /api/set-path", handlers.SetPath)
 	mux.HandleFunc("POST /api/main/scan", handlers.ScanMainFolder)
+	mux.HandleFunc("POST /api/project/open-vscode", handlers.OpenVSCode)
+	mux.HandleFunc("POST /api/project/open-winexplorer", handlers.OpenWinExplorer)
 	mux.HandleFunc("GET /api/project/{id}", handlers.GetProjectInfoById)
 
 	loggingMux := middleware.LoggingMiddleware(mux)
