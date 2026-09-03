@@ -13,7 +13,7 @@ func (h *Handlers) OpenWinExplorer(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&setPath)
 	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		
+
 		return
 	}
 
@@ -22,15 +22,15 @@ func (h *Handlers) OpenWinExplorer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Services.OpenWinExplorer(setPath.Path)
+	h.Services.OpenExplorer(setPath.Path)
 
 	resp := utils.JsonResponse{
 		Message: "VSCode opened",
 		Status:  http.StatusOK,
 		Success: true,
 		Data: map[string]any{
-			"path": h.MainFolderInfo.Path,
-			"VSCode" :"opened",
+			"path":   h.MainFolderInfo.Path,
+			"VSCode": "opened",
 		},
 	}
 	resp.ResponseSend(w)

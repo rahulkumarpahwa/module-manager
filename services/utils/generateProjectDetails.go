@@ -1,29 +1,123 @@
 package utils
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/rahulkumarpahwa/module-manager/services/constants"
 	"github.com/rahulkumarpahwa/module-manager/services/types"
 )
 
-func GenerateProjectDetails(projectPath string, entry os.DirEntry, i int) (*types.Project, error) {
-	if !entry.IsDir() {
-		return nil, errors.New("GenerateProjectDetails: entry can't be NON-DIR.")
+type ProjectDetails struct {
+	Path string
+	ID   string
+}
+
+type Results struct {
+	project *types.Project
+	err     error
+}
+
+func GenerateProjectDetails(ctx context.Context, projectDetails []ProjectDetails) ([]types.Project, error) {
+	jobs := make(chan ProjectDetails)
+	results := make(chan Results, len(projectDetails))
+
+	const workers = 5
+	var wg sync.WaitGroup
+
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case item, ok := <-jobs:
+					if !ok {
+						return
+					}
+
+					pe, err := GenerateProjectDetailsWorker(ctx, item.Path, item.ID)
+
+					select {
+					case results <- Results{
+						project: pe,
+						err:     err,
+					}:
+					case <-ctx.Done():
+						return
+					}
+
+				}
+
+			}
+
+		}()
 	}
 
-	if projectPath == "" {
+	go func() {
+		defer close(jobs)
+
+		for _, item := range projectDetails {
+			select {
+			case jobs <- item:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	var projects []types.Project
+
+	for result := range results {
+		if result.err != nil {
+			// If cancellation happened, return it.
+			if ctx.Err() != nil {
+				return nil, ctx.Err()
+			}
+
+			return nil, result.err
+		}
+
+		if result.project != nil {
+			projects = append(projects, *result.project)
+		}
+	}
+
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
+
+func GenerateProjectDetailsWorker(ctx context.Context, path string, ID string) (*types.Project, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	if path == "" {
 		return nil, fmt.Errorf("GenerateProjectDetails: project path can't be empty.")
 	}
 
-	pe := types.Project{}
+	pe := types.Project{
+		ID:   ID,
+		Path: path,
+	}
 
-	pe.Name = entry.Name()
-	pe.ID = GenerateID()
-	pe.Path = projectPath
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 
 	var size int64
 	size, err := GetDirSizeInBytes(pe.Path)
@@ -32,13 +126,9 @@ func GenerateProjectDetails(projectPath string, entry os.DirEntry, i int) (*type
 	}
 	pe.Size = size
 
-	info, err := entry.Info()
-	if err != nil {
-		return nil, fmt.Errorf("GenerateProjectDetails: %w", err)
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
-
-	pe.ModifiedDate, pe.CreationDate = GetTimes(info)
-	// .Format(time.RFC3339)
 
 	entries, err := os.ReadDir(pe.Path)
 	if err != nil {
@@ -46,6 +136,11 @@ func GenerateProjectDetails(projectPath string, entry os.DirEntry, i int) (*type
 	}
 
 	for _, entry := range entries {
+
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
 		var name = entry.Name()
 
 		info, err := entry.Info()
@@ -77,15 +172,19 @@ func GenerateProjectDetails(projectPath string, entry os.DirEntry, i int) (*type
 		}
 
 		underProject := types.UnderProjectDir{
-			Name:  name,
+			Name: name,
 			Size: info.Size(),
-			Path:  filepath.Join(pe.Path, name),
+			Path: filepath.Join(pe.Path, name),
 		}
 
 		pe.UnderDir = append(pe.UnderDir, underProject)
 	}
 
 	if pe.HasNodeModules {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
 		path := filepath.Join(pe.Path, "node_modules")
 		size, err := GetNodeModulesSizeInBytes(path, constants.WORKERS)
 		if err != nil {
@@ -97,6 +196,10 @@ func GenerateProjectDetails(projectPath string, entry os.DirEntry, i int) (*type
 	}
 
 	if pe.HasGit {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
 		gitInfo, err := GetGitInfo(pe.Path)
 		if err != nil {
 			return nil, fmt.Errorf("GenerateProjectDetails : %w", err)
@@ -107,3 +210,81 @@ func GenerateProjectDetails(projectPath string, entry os.DirEntry, i int) (*type
 
 	return &pe, nil
 }
+
+/*
+pesChan := make(chan types.Project)
+	wsChan := make(chan types.WorkSpace)
+
+	var wg sync.WaitGroup
+
+	for i, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		if entry.Name() == "" {
+			continue
+		}
+
+		entryPath := filepath.Join(path, entry.Name())
+
+		wg.Add(1)
+		go func(entryPath string, entry os.DirEntry, i int) error {
+			defer wg.Done()
+
+			if utils.IsProject(entryPath) {
+
+				pe, err := utils.GenerateProjectDetails(entryPath, entry, i)
+				if err != nil {
+					return fmt.Errorf("ScanMainFolder: %w", err)
+				}
+				pesChan <- *pe
+
+			} else if utils.IsWorkspace(entryPath) {
+
+				we, err := utils.GenerateWorkspaceDetails(entryPath, entry, i)
+				if err != nil {
+					return fmt.Errorf("ScanMainFolder: %w", err)
+				}
+				wsChan <- *we
+			}
+
+			return nil
+		}(entryPath, entry, i)
+	}
+	go func() {
+		wg.Wait()
+		close(pesChan)
+		close(wsChan)
+	}()
+
+	var pes []types.Project
+	var ws []types.WorkSpace
+
+	for pesChan != nil || wsChan != nil {
+		select {
+		case result, ok := <-pesChan:
+			if !ok {
+				pesChan = nil
+				continue
+			}
+			pes = append(pes, result)
+
+		case result, ok := <-wsChan:
+			if !ok {
+				wsChan = nil
+				continue
+			}
+			ws = append(ws, result)
+		}
+	}
+
+	s.MainFolder.Projects = append(s.MainFolder.Projects, pes...)
+	s.MainFolder.ProjectsCount = len(s.MainFolder.Projects)
+	s.MainFolder.WorkSpaces = append(s.MainFolder.WorkSpaces, ws...)
+	s.MainFolder.WorkSpacesCount = len(s.MainFolder.WorkSpaces)
+
+	s.MainFolder.IndexProject = makeIndexProject(s.MainFolder.Projects)
+	s.MainFolder.IndexWorkspace = makeIndexWorkspace(s.MainFolder.WorkSpaces)
+
+*/
