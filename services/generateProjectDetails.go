@@ -13,8 +13,8 @@ import (
 )
 
 type ProjectDetails struct {
-	Path string
-	ID   string
+	ID   string `json:"id"`
+	Path string `json:"path"`
 }
 
 type Results struct {
@@ -121,7 +121,7 @@ func generateProjectDetailsWorker(ctx context.Context, path string, ID string) (
 	}
 
 	var size int64
-	size, err := utils.GetDirSizeInBytes(pe.Path)
+	size, err := utils.GetDirSizeInBytes(ctx, pe.Path)
 	if err != nil {
 		return nil, fmt.Errorf("GenerateProjectDetails: %w", err)
 	}
@@ -187,7 +187,7 @@ func generateProjectDetailsWorker(ctx context.Context, path string, ID string) (
 		}
 
 		path := filepath.Join(pe.Path, "node_modules")
-		size, err := utils.GetNodeModulesSizeInBytes(path, constants.WORKERS)
+		size, err := utils.GetNodeModulesSizeInBytes(ctx, path, constants.WORKERS)
 		if err != nil {
 			return nil, fmt.Errorf("GenerateProjectDetails: %w", err)
 

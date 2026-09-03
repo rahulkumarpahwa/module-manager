@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
 	"os"
@@ -9,10 +10,14 @@ import (
 )
 
 // returns the DirectorySize in bytes (int64)
-func GetDirSizeInBytes(root string) (int64, error) {
+func GetDirSizeInBytes(ctx context.Context, root string) (int64, error) {
 	var bytes int64
 
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		if err != nil {
 			return err
 		}
@@ -61,7 +66,11 @@ func FormatSize(bytes int64) string {
 }
 
 // get the node_modules size in bytes (use workers)
-func GetNodeModulesSizeInBytes(nodeModulesPath string, workers int) (int64, error) {
+func GetNodeModulesSizeInBytes(ctx context.Context, nodeModulesPath string, workers int) (int64, error) {
+	if err := ctx.Err(); err != nil {
+		return 0, err
+	}
+
 	files := make(chan string)
 	var wg sync.WaitGroup
 	// Each worker calculates its own local total.
@@ -86,6 +95,10 @@ func GetNodeModulesSizeInBytes(nodeModulesPath string, workers int) (int64, erro
 	} // Walk the directory and send files to workers.
 
 	err := filepath.WalkDir(nodeModulesPath, func(path string, d fs.DirEntry, err error) error {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		if err != nil {
 			return err
 		}
