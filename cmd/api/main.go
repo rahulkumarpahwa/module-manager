@@ -35,7 +35,7 @@ func main() {
 	mux.HandleFunc("POST /api/main/scan", handlers.ScanMainFolder)
 	mux.HandleFunc("POST /api/project/open-vscode", handlers.OpenVSCode)
 	mux.HandleFunc("POST /api/project/open-winexplorer", handlers.OpenWinExplorer)
-	mux.HandleFunc("GET /api/project/{id}", handlers.GetProjectInfoById)
+	mux.HandleFunc("POST /api/project/{id}", handlers.GetProjectInfoById)
 
 	loggingMux := middleware.LoggingMiddleware(mux)
 

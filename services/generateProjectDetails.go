@@ -1,4 +1,4 @@
-package utils
+package services
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/rahulkumarpahwa/module-manager/services/constants"
 	"github.com/rahulkumarpahwa/module-manager/services/types"
+	"github.com/rahulkumarpahwa/module-manager/services/utils"
 )
 
 type ProjectDetails struct {
@@ -21,7 +22,7 @@ type Results struct {
 	err     error
 }
 
-func GenerateProjectDetails(ctx context.Context, projectDetails []ProjectDetails) ([]types.Project, error) {
+func (s *Services) GenerateProjectDetails(ctx context.Context, projectDetails []ProjectDetails) ([]types.Project, error) {
 	jobs := make(chan ProjectDetails)
 	results := make(chan Results, len(projectDetails))
 
@@ -42,7 +43,7 @@ func GenerateProjectDetails(ctx context.Context, projectDetails []ProjectDetails
 						return
 					}
 
-					pe, err := GenerateProjectDetailsWorker(ctx, item.Path, item.ID)
+					pe, err := generateProjectDetailsWorker(ctx, item.Path, item.ID)
 
 					select {
 					case results <- Results{
@@ -101,7 +102,7 @@ func GenerateProjectDetails(ctx context.Context, projectDetails []ProjectDetails
 	return projects, nil
 }
 
-func GenerateProjectDetailsWorker(ctx context.Context, path string, ID string) (*types.Project, error) {
+func generateProjectDetailsWorker(ctx context.Context, path string, ID string) (*types.Project, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -120,7 +121,7 @@ func GenerateProjectDetailsWorker(ctx context.Context, path string, ID string) (
 	}
 
 	var size int64
-	size, err := GetDirSizeInBytes(pe.Path)
+	size, err := utils.GetDirSizeInBytes(pe.Path)
 	if err != nil {
 		return nil, fmt.Errorf("GenerateProjectDetails: %w", err)
 	}
@@ -186,7 +187,7 @@ func GenerateProjectDetailsWorker(ctx context.Context, path string, ID string) (
 		}
 
 		path := filepath.Join(pe.Path, "node_modules")
-		size, err := GetNodeModulesSizeInBytes(path, constants.WORKERS)
+		size, err := utils.GetNodeModulesSizeInBytes(path, constants.WORKERS)
 		if err != nil {
 			return nil, fmt.Errorf("GenerateProjectDetails: %w", err)
 
@@ -200,7 +201,7 @@ func GenerateProjectDetailsWorker(ctx context.Context, path string, ID string) (
 			return nil, err
 		}
 
-		gitInfo, err := GetGitInfo(pe.Path)
+		gitInfo, err := utils.GetGitInfo(pe.Path)
 		if err != nil {
 			return nil, fmt.Errorf("GenerateProjectDetails : %w", err)
 		}
