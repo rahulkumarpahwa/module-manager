@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module Manager Client</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">▦</span>
+      <div>
+        <h1>Module Manager</h1>
+        <p class="subtitle">Client for the MM Go backend &mdash; endpoints from <code>postman/module-manager.postman_collection.json</code></p>
+      </div>
+    </div>
+    <div class="health" id="healthWrap" title="GET /api/healthz">
+      <span class="health-dot" id="healthDot"></span>
+      <span id="healthText">Checking&hellip;</span>
+      <button id="healthBtn" class="btn btn-ghost" type="button" title="Re-check health">Recheck</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Connection / path controls -->
+    <section class="card">
+      <div class="card-title">
+        <h2>Connection &amp; Path</h2>
+      </div>
+
+      <div class="controls">
+        <label class="field">
+          <span class="field-label">Base URL</span>
+          <input id="baseUrl" type="text" value="http://localhost:8778" spellcheck="false" autocomplete="off" />
+        </label>
+
+        <label class="field grow">
+          <span class="field-label">Folder Path</span>
+          <input id="folderPath" type="text" placeholder="C:\Programming\projects" spellcheck="false" autocomplete="off" />
+        </label>
+
+        <button id="setPathBtn" class="btn btn-primary" type="button">Set Path</button>
+        <button id="scanBtn" class="btn btn-accent" type="button">Scan</button>
+      </div>
+
+      <div class="controls sub">
+        <label class="field mini">
+          <span class="field-label">limit</span>
+          <input id="limit" type="number" value="20" min="1" />
+        </label>
+        <label class="field mini">
+          <span class="field-label">offset</span>
+          <input id="offset" type="number" value="0" min="0" />
+        </label>
+        <span id="scannedPath" class="muted path-hint"></span>
+      </div>
+    </section>
+
+    <!-- Status messages -->
+    <div id="toast" class="toast" hidden></div>
+
+    <!-- Results -->
+    <section class="card">
+      <div class="card-title between">
+        <h2>Projects</h2>
+        <div class="summary" id="summary"></div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="projectsTable">
+          <thead>
+            <tr>
+              <th class="num">#</th>
+              <th>id</th>
+              <th>name</th>
+              <th>path</th>
+              <th>modified_date</th>
+              <th>workspace</th>
+              <th>project</th>
+              <th>language</th>
+              <th class="num"></th>
+            </tr>
+          </thead>
+          <tbody id="projectsBody">
+            <tr>
+              <td colspan="9" class="empty">Nothing scanned yet. Set a path and click <b>Scan</b>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Raw response viewer -->
+    <section class="card">
+      <div class="card-title between">
+        <h2>Raw Response</h2>
+        <button id="toggleRawBtn" class="btn btn-ghost" type="button">show</button>
+      </div>
+      <pre id="rawResponse" class="raw" hidden></pre>
+    </section>
+  </main>
+
+  <footer class="footer">
+    Endpoints
+    &mdash; <code>GET /api/healthz</code>
+    &mdash; <code>POST /api/set-path</code>
+    &mdash; <code>POST /api/main/scan?limit=&amp;offset=</code>
+    &mdash; <code>POST /api/project/{id}</code>
+    &mdash; <code>POST /api/project/infos</code>
+    &mdash; <code>POST /api/project/open-vscode</code>
+    &mdash; <code>POST /api/project/open-winexplorer</code>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
